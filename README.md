@@ -1,5 +1,7 @@
 # Java Thread Dump Parser Library
 
+[![CI](https://github.com/parttimenerd/jthreaddump/actions/workflows/ci.yml/badge.svg)](https://github.com/parttimenerd/jthreaddump/actions/workflows/ci.yml)
+
 A small Java library for parsing thread dumps from `jstack` and `jcmd` output.
 
 ## Features
