@@ -1,4 +1,4 @@
-# jthreaddump – Java Thread Dump Parser Library
+# Java Thread Dump Parser Library
 
 A small Java library for parsing thread dumps from `jstack` and `jcmd` output.
 
