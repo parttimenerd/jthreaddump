@@ -21,8 +21,7 @@ import me.bechberger.jthreaddump.parser.ThreadDumpParser;
 import me.bechberger.jthreaddump.model.ThreadDump;
 
 // Parse from string
-ThreadDumpParser parser = new ThreadDumpParser();
-ThreadDump dump = parser.parse(threadDumpString);
+ThreadDump dump = ThreadDumpParser.parse(threadDumpString);
 
 // Access parsed data
 System.out.println("Total threads: " + dump.threads().size());
@@ -49,7 +48,7 @@ String threadDump = JStackUtil.captureThreadDump(pid);
 String threadDump = JStackUtil.captureThreadDump(pid, true);
 
 // Parse it
-ThreadDump dump = new ThreadDumpParser().parse(threadDump);
+ThreadDump dump = ThreadDumpParser.parse(threadDump);
 ```
 
 ### CLI Tool
@@ -82,7 +81,7 @@ jthreaddump dump.txt -v
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jthreaddump</artifactId>
-    <version>0.1.1</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
@@ -138,7 +137,7 @@ All data exposed as immutable Java records.
 ### Example 1: Find BLOCKED threads
 
 ```java
-ThreadDump dump = parser.parse(dumpText);
+ThreadDump dump = ThreadDumpParser.parse(dumpText);
 
 dump.threads().stream()
     .filter(t -> "BLOCKED".equals(t.state()))
@@ -148,11 +147,21 @@ dump.threads().stream()
 ### Example 3: Compare thread counts
 
 ```java
-ThreadDump dump1 = parser.parse(Files.readString(Path.of("dump1.txt")));
-ThreadDump dump2 = parser.parse(Files.readString(Path.of("dump2.txt")));
+import me.bechberger.jthreaddump.parser.ThreadDumpParser;
 
-System.out.println("Thread delta: " + 
-    (dump2.threads().size() - dump1.threads().size()));
+ThreadDump dump1 = ThreadDumpParser.parse(Files.readString(Path.of("dump1.txt")));
+ThreadDump dump2 = ThreadDumpParser.parse(Files.readString(Path.of("dump2.txt")));
+
+System.out.
+
+println("Thread delta: "+
+                (dump2.threads().
+
+size() -dump1.
+
+threads().
+
+size()));
 ```
 
 ### Example 4: Find long-running threads
