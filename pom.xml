@@ -6,11 +6,12 @@
 
     <groupId>me.bechberger</groupId>
     <artifactId>jthreaddump</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
 
 
     <name>jthreaddump</name>
     <url>https://github.com/parttimenerd/jthreaddump</url>
+    <description>A small Java library for parsing thread dumps from `jstack` and `jcmd` output.</description>
 
     <licenses>
         <license>
