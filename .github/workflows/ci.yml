@@ -30,27 +30,6 @@ jobs:
       - name: Build package
         run: mvn package -DskipTests
 
-      - name: Generate config schema
-        if: matrix.java-version == 21
-        run: java -jar target/jthreaddump.jar generate-schema config-schema.json
-
-      - name: Verify schema was generated
-        if: matrix.java-version == 21
-        run: |
-          if [ ! -f config-schema.json ]; then
-            echo "ERROR: config-schema.json was not generated!"
-            exit 1
-          fi
-          echo "Schema generated successfully"
-
-      - name: Upload schema artifact
-        if: matrix.java-version == 21
-        uses: actions/upload-artifact@v4
-        with:
-          name: config-schema
-          path: config-schema.json
-          retention-days: 30
-
       - name: Upload JAR artifact
         if: matrix.java-version == 21
         uses: actions/upload-artifact@v4
