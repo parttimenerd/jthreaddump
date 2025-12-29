@@ -156,6 +156,36 @@ class VersionBumper:
 
         return ""
 
+    def get_version_changelog_entry(self, version: str) -> str:
+        """Extract changelog entry for a specific released version"""
+        if not self.changelog.exists():
+            return ""
+
+        content = self.changelog.read_text()
+
+        # Look for specific version section
+        version_pattern = rf'## \[{re.escape(version)}\][^\n]*\n(.*?)(?=\n## \[|$)'
+        version_match = re.search(version_pattern, content, re.DOTALL)
+
+        if version_match:
+            entry = version_match.group(1).strip()
+            # Remove empty section headers (headers with no content after them)
+            lines = []
+            header = None
+            for line in entry.split('\n'):
+                if line.startswith('###'):
+                    header = line
+                    continue
+                if line.strip():
+                    if header:
+                        lines.append(header)
+                        header = None
+                    lines.append(line)
+
+            return '\n'.join(lines) if lines else ""
+
+        return ""
+
     def validate_changelog(self, version: str) -> bool:
         """Validate that changelog has entries for the version"""
         entry = self.get_changelog_entry(version)
@@ -228,8 +258,8 @@ class VersionBumper:
             print("⚠ Could not check GitHub CLI auth status")
             return
 
-        # Get changelog entry
-        changelog_entry = self.get_changelog_entry(version)
+        # Get changelog entry for this specific version (after it's been released in CHANGELOG.md)
+        changelog_entry = self.get_version_changelog_entry(version)
         if not changelog_entry:
             changelog_entry = f"Release {version}\n\nSee [CHANGELOG.md](https://github.com/parttimenerd/jthreaddump/blob/main/CHANGELOG.md) for details."
 
