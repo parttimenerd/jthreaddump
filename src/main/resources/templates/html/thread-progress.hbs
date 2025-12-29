@@ -1,0 +1,313 @@
+{{> partials/header}}
+<header>
+    <div class="container">
+        <h1>Thread Progress Analysis</h1>
+        <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+        {{#if isMultiDump}}<span class="severity-badge severity-info">{{dumpCount}} Dumps</span>{{/if}}
+    </div>
+</header>
+<div class="container">
+    <div class="card">
+        <h2>Summary</h2>
+        <div class="stat-grid">
+            <div class="stat-item">
+                <div class="stat-value">{{total}}</div>
+                <div class="stat-label">Total Threads</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" style="color: var(--color-ok);">{{active}}</div>
+                <div class="stat-label">Active</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{waiting}}</div>
+                <div class="stat-label">Waiting</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" {{#ifGt blocked 0}}style="color: var(--color-warning);"{{/ifGt}}>{{blocked}}</div>
+                <div class="stat-label">Blocked</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" {{#ifGt noProgress 0}}style="color: var(--color-warning);"{{/ifGt}}>{{noProgress}}</div>
+                <div class="stat-label">No Progress</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" {{#ifGt stuck 0}}style="color: var(--color-error);"{{/ifGt}}>{{stuck}}</div>
+                <div class="stat-label">Stuck</div>
+            </div>
+        </div>
+        <div style="margin-top: 20px; text-align: center;">
+            <p style="font-size: 1.2rem;">
+                Problem Rate:
+                <strong {{#ifGte problemPercentage 50}}style="color: var(--color-error);"{{else}}{{#ifGte problemPercentage 25}}style="color: var(--color-warning);"{{/ifGte}}{{/ifGte}}>
+                    {{problemPercentage}}%
+                </strong>
+            </p>
+        </div>
+    </div>
+
+    {{#if indicatesStall}}
+    <div class="card" style="background: #f8d7da; border: 2px solid #dc3545;">
+        <h2 style="color: #721c24;">⚠ Possible Stall Detected</h2>
+        <p>High percentage of problem threads indicates the application may be stalled.</p>
+    </div>
+    {{/if}}
+
+    <!-- Charts Section -->
+    <div class="card">
+        <h2>Thread State Distribution</h2>
+        <div class="chart-row">
+            <div class="chart-container">
+                <canvas id="stateDistributionPie"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="classificationBar"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {{#if isMultiDump}}
+    <div class="card">
+        <h2>State Evolution Across Dumps</h2>
+        <div class="chart-container" style="height: 350px;">
+            <canvas id="stateEvolutionLine"></canvas>
+        </div>
+
+        {{#if trendData}}
+        <h3 style="margin-top: 20px;">Trend Summary</h3>
+        <table class="trend-table">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>First Dump</th>
+                    <th>Last Dump</th>
+                    <th>Change</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each trendData}}
+                <tr>
+                    <td>{{metric}}</td>
+                    <td>{{first}}</td>
+                    <td>{{last}}</td>
+                    <td class="{{changeClass}}">{{changeDisplay}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+        {{/if}}
+    </div>
+    {{/if}}
+
+    {{#if classifications}}
+    <div class="card">
+        <h2>Thread Classifications</h2>
+        {{#each classifications}}
+        <details {{#if isProblem}}open{{/if}} style="margin-bottom: 12px;">
+            <summary style="{{#if isProblem}}background: #fff3cd;{{/if}}">
+                <span class="severity-badge {{#if isProblem}}severity-warning{{else}}severity-ok{{/if}}">
+                    {{name}}
+                </span>
+                - {{count}} thread(s)
+            </summary>
+            {{#if threads}}
+            <div style="padding: 16px;">
+                {{#each threads}}
+                <div style="padding: 12px; margin: 8px 0; background: #f8f9fa; border-radius: 8px;">
+                    <p><strong>{{threadName}}</strong>
+                        {{#if state}}<span class="thread-badge {{lowercase state}}">{{state}}</span>{{/if}}
+                    </p>
+                    {{#if isMultiDump}}
+                    <p style="color: #666; font-size: 0.9rem;">State History: {{stateHistoryString}}</p>
+                    {{/if}}
+                    {{#if stackTrace}}
+                    <details style="margin-top: 8px;">
+                        <summary>Stack Trace</summary>
+                        <div class="stack-trace">{{#each stackTrace}}{{this}}
+{{/each}}</div>
+                    </details>
+                    {{/if}}
+                </div>
+                {{/each}}
+                {{#if hasMore}}
+                <p style="color: #666; font-style: italic;">... and {{moreCount}} more threads</p>
+                {{/if}}
+            </div>
+            {{/if}}
+        </details>
+        {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if hasFindings}}
+    <div class="card">
+        <h2>Findings</h2>
+        <ul class="findings-list">
+            {{#each findings}}
+            <li class="finding severity-{{lowercase severity}}">
+                <div class="finding-header">
+                    <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+                </div>
+                <div class="finding-message">{{message}}</div>
+            </li>
+            {{/each}}
+        </ul>
+    </div>
+    {{/if}}
+</div>
+
+<script>
+// State Distribution Pie Chart
+new Chart(document.getElementById('stateDistributionPie'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Active', 'Waiting', 'Blocked', 'No Progress', 'Stuck', 'Other'],
+        datasets: [{
+            data: [{{active}}, {{waiting}}, {{blocked}}, {{noProgress}}, {{stuck}}, {{total}} - {{active}} - {{waiting}} - {{blocked}} - {{noProgress}} - {{stuck}}],
+            backgroundColor: ['#28a745', '#ffc107', '#fd7e14', '#dc3545', '#721c24', '#6c757d']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'right' },
+            title: { display: true, text: 'Thread State Distribution' }
+        }
+    }
+});
+
+// Classification Bar Chart
+new Chart(document.getElementById('classificationBar'), {
+    type: 'bar',
+    data: {
+        labels: [{{#each classifications}}'{{name}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            label: 'Thread Count',
+            data: [{{#each classifications}}{{count}}{{#unless @last}}, {{/unless}}{{/each}}],
+            backgroundColor: [{{#each classifications}}{{#if isProblem}}'#dc3545'{{else}}'#28a745'{{/if}}{{#unless @last}}, {{/unless}}{{/each}}]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Threads by Classification' }
+        },
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+});
+
+{{#if isMultiDump}}
+// State Evolution Line Chart
+new Chart(document.getElementById('stateEvolutionLine'), {
+    type: 'line',
+    data: {
+        labels: [{{#each dumpLabels}}'Dump {{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [
+            {
+                label: 'Active',
+                data: {{json activeHistory}},
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                fill: true,
+                tension: 0.3
+            },
+            {
+                label: 'Blocked',
+                data: {{json blockedHistory}},
+                borderColor: '#fd7e14',
+                backgroundColor: 'rgba(253, 126, 20, 0.1)',
+                fill: true,
+                tension: 0.3
+            },
+            {
+                label: 'Stuck',
+                data: {{json stuckHistory}},
+                borderColor: '#dc3545',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                fill: true,
+                tension: 0.3
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: { display: true, text: 'Thread State Evolution Over Time' }
+        },
+        scales: {
+            y: { beginAtZero: true, title: { display: true, text: 'Thread Count' } }
+        }
+    }
+});
+{{/if}}
+</script>
+
+{{#if isMultiDump}}
+<!-- Advanced Visualizations -->
+<script>
+// Prepare data for visualizations
+window.threadProgressTimelineData = {
+    dumpCount: {{dumpCount}},
+    threads: [
+        {{#each threadHistory}}
+        {
+            name: '{{name}}',
+            stateHistory: {{json stateHistory}}
+        }{{#unless @last}},{{/unless}}
+        {{/each}}
+    ]
+};
+
+window.threadProgressHeatMapData = {
+    dumpCount: {{dumpCount}},
+    threads: [
+        {{#each threadHistory}}
+        {
+            name: '{{name}}',
+            stateHistory: {{json stateHistory}}
+        }{{#unless @last}},{{/unless}}
+        {{/each}}
+    ]
+};
+
+window.threadFlowSankeyData = {
+    dumpCount: {{dumpCount}},
+    transitions: [
+        {{#each stateTransitions}}
+        {
+            fromDump: {{fromDump}},
+            toDump: {{toDump}},
+            fromState: '{{fromState}}',
+            toState: '{{toState}}',
+            count: {{count}}
+        }{{#unless @last}},{{/unless}}
+        {{/each}}
+    ]
+};
+</script>
+
+<div class="card" data-collapsible>
+    <h2>📊 Interactive Timeline</h2>
+    <p style="margin-bottom: 15px;">Interactive visualization of thread state changes across dumps. Hover over segments for details.</p>
+    <div id="threadProgressTimeline" class="d3-visualization" data-viz-type="timeline" data-viz-source="threadProgressTimelineData" style="min-height: 500px; background: white; border: 1px solid #ddd; border-radius: 4px;"></div>
+</div>
+
+<div class="card" data-collapsible>
+    <h2>🔥 Thread State Heat Map</h2>
+    <p style="margin-bottom: 15px;">Heat map showing thread states across all dumps. Darker red indicates more severe states (blocked).</p>
+    <div id="threadProgressHeatMap" class="d3-visualization" data-viz-type="heatmap" data-viz-source="threadProgressHeatMapData" style="min-height: 400px; background: white; border: 1px solid #ddd; border-radius: 4px; overflow-x: auto;"></div>
+</div>
+
+<div class="card" data-collapsible>
+    <h2>🌊 Thread State Flow Diagram</h2>
+    <p style="margin-bottom: 15px;">Sankey diagram showing how threads flow between states across dumps.</p>
+    <div id="threadProgressSankey" class="d3-visualization" data-viz-type="sankey" data-viz-source="threadFlowSankeyData" style="min-height: 600px; background: white; border: 1px solid #ddd; border-radius: 4px;"></div>
+</div>
+{{/if}}
+
+{{> partials/footer}}

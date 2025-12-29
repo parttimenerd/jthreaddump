@@ -1,0 +1,91 @@
+{{!-- Verdict analysis result template --}}
+{{#bold "╔═══════════════════════════════════════════════════════════════════════════════╗" color=colorEnabled}}{{/bold}}
+{{#bold "║                              APPLICATION VERDICT                              ║" color=colorEnabled}}{{/bold}}
+{{#bold "╚═══════════════════════════════════════════════════════════════════════════════╝" color=colorEnabled}}{{/bold}}
+
+{{#if isHealthy}}
+{{#success "✓ VERDICT: HEALTHY" color=colorEnabled}}{{/success}}
+{{else}}{{#if isDeadlock}}
+{{#error "✗ VERDICT: DEADLOCK DETECTED" color=colorEnabled}}{{/error}}
+{{else}}{{#if isCritical}}
+{{#error "⚠ VERDICT: {{status}}" color=colorEnabled}}{{/error}}
+{{else}}
+{{#warning "⚠ VERDICT: {{status}}" color=colorEnabled}}{{/warning}}
+{{/if}}{{/if}}{{/if}}
+
+{{statusDescription}}
+
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Analysis Summary:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+  Dumps Analyzed:     {{dumpCount}}
+  Total Threads:      {{totalThreads}}
+
+{{#if hasHealthEvolution}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "📊 SMART HEALTH EVOLUTION ANALYSIS:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#if isDegrading}}
+{{#error "⚠ HEALTH TREND: DEGRADING" color=colorEnabled}}{{/error}}
+{{else}}{{#if isImproving}}
+{{#success "✓ HEALTH TREND: IMPROVING" color=colorEnabled}}{{/success}}
+{{else}}
+{{#cyan "→ HEALTH TREND: STABLE" color=colorEnabled}}{{/cyan}}
+{{/if}}{{/if}}
+
+  Initial Score:      {{firstScore}}/100 ({{#each statusPerDump}}{{#if @first}}{{this}}{{/if}}{{/each}})
+  Current Score:      {{lastScore}}/100 ({{healthStatus}})
+  Score Change:       {{#if isDegrading}}{{#error scoreChange color=colorEnabled}}{{/error}}{{else}}{{#if isImproving}}{{#success scoreChange color=colorEnabled}}{{/success}}{{else}}{{scoreChange}}{{/if}}{{/if}} points ({{changePercent}}%)
+
+{{#if hasCriticalChange}}
+{{#error "🔴 CRITICAL HEALTH DROP DETECTED!" color=colorEnabled}}{{/error}}
+Significant degradation occurred at dump {{criticalChangeDump}}
+{{/if}}
+
+{{#if hasDegradingCategories}}
+{{#warning "Degrading Categories:" color=colorEnabled}}{{/warning}} {{#each degradingCategories}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+{{/if}}
+
+{{#if hasImprovingCategories}}
+{{#success "Improving Categories:" color=colorEnabled}}{{/success}} {{#each improvingCategories}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+{{/if}}
+
+Health Score Timeline:
+{{#each healthScoresPerDump}}
+  Dump {{addOne @index}}: {{this}}/100 ({{../statusPerDump.[@index]}})
+{{/each}}
+
+{{/if}}
+
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Category Status:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each verdictItems}}
+{{#if isOk}}{{#success "✓" color=../colorEnabled}}{{/success}}{{else}}{{#if isWarning}}{{#warning "⚠" color=../colorEnabled}}{{/warning}}{{else}}{{#error "✗" color=../colorEnabled}}{{/error}}{{/if}}{{/if}} {{pad category width=18}}: {{summary}}
+{{/each}}
+
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Where is Your Application Spending Time?" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+  Running (CPU):      {{#ifGte runningPercent 50}}{{#success runningPercent color=colorEnabled}}{{/success}}{{else}}{{runningPercent}}{{/ifGte}}%
+  Blocked (Locks):    {{#ifGte blockedPercent 20}}{{#error blockedPercent color=colorEnabled}}{{/error}}{{else}}{{#ifGte blockedPercent 10}}{{#warning blockedPercent color=colorEnabled}}{{/warning}}{{else}}{{blockedPercent}}{{/ifGte}}{{/ifGte}}%
+  Waiting:            {{waitingPercent}}%
+  I/O Operations:     {{#ifGte ioPercent 30}}{{#warning ioPercent color=colorEnabled}}{{/warning}}{{else}}{{ioPercent}}{{/ifGte}}%
+  Garbage Collection: {{#ifGte gcPercent 20}}{{#warning gcPercent color=colorEnabled}}{{/warning}}{{else}}{{gcPercent}}{{/ifGte}}%
+
+{{!-- Findings --}}
+{{#if hasFindings}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Key Findings:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each findings}}
+{{#severityColor severity color=../colorEnabled}}[{{severity}}]{{/severityColor}} {{message}}
+{{/each}}
+{{/if}}
+
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}

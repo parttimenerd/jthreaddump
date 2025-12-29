@@ -1,0 +1,322 @@
+{{> partials/header}}
+<header>
+    <div class="container">
+        <h1>JFR Profiling Analysis</h1>
+        <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+        {{#if isMultiDump}}<span class="severity-badge severity-info">Multi-Dump Temporal</span>{{/if}}
+    </div>
+</header>
+<div class="container">
+    {{#if hasData}}
+    <div class="card">
+        <h2>Summary</h2>
+        <div class="stat-grid">
+            <div class="stat-item">
+                <div class="stat-value">{{totalSamples}}</div>
+                <div class="stat-label">Total Samples</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{totalMethods}}</div>
+                <div class="stat-label">Unique Methods</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{totalThreads}}</div>
+                <div class="stat-label">Unique Threads</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{totalAllocations}}</div>
+                <div class="stat-label">Allocation Sites</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{totalIOTargets}}</div>
+                <div class="stat-label">I/O Targets</div>
+            </div>
+        </div>
+    </div>
+
+    {{#if hasTemporal}}
+    <!-- Temporal Profiling Analysis -->
+    <div class="card">
+        <h2>Temporal Profiling - Method Evolution</h2>
+        <table class="trend-table">
+            <thead>
+                <tr>
+                    <th>Method</th>
+                    <th>Trend</th>
+                    <th>First CPU %</th>
+                    <th>Last CPU %</th>
+                    <th>Change</th>
+                    <th>CPU Timeline</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each methodEvolutions}}
+                <tr style="{{#if isEmerging}}background: #fff3cd;{{else}}{{#if isIncreasing}}background: #ffe6e6;{{else}}{{#if isDecreasing}}background: #e6ffe6;{{/if}}{{/if}}{{/if}}">
+                    <td><code title="{{fullMethod}}">{{method}}</code></td>
+                    <td>
+                        <span class="thread-badge {{#if isEmerging}}error{{else}}{{#if isIncreasing}}warning{{else}}{{#if isDecreasing}}ok{{else}}info{{/if}}{{/if}}{{/if}}">
+                            {{trend}}
+                        </span>
+                    </td>
+                    <td>{{firstPct}}%</td>
+                    <td>{{lastPct}}%</td>
+                    <td>
+                        <strong style="color: {{#if isIncreasing}}#dc3545{{else}}{{#if isDecreasing}}#28a745{{else}}#666{{/if}}{{/if}};">
+                            {{change}}% ({{changePercent}}%)
+                        </strong>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 2px;">
+                            {{#each cpuHistory}}
+                            <div style="flex: 1; height: 20px; background: linear-gradient(to top, #667eea {{this}}%, #e9ecef {{this}}%); border-radius: 2px;" title="{{this}}%"></div>
+                            {{/each}}
+                        </div>
+                    </td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Temporal Trend Charts -->
+    <div class="card">
+        <h2>Resource Trends Over Time</h2>
+        <div class="chart-row">
+            {{#if allocationTrend}}
+            <div class="chart-container">
+                <canvas id="allocationTrendChart"></canvas>
+            </div>
+            {{/if}}
+            {{#if ioTrend}}
+            <div class="chart-container">
+                <canvas id="ioTrendChart"></canvas>
+            </div>
+            {{/if}}
+        </div>
+    </div>
+    {{/if}}
+
+    <div class="card">
+        <h2>CPU Profile</h2>
+        <div class="chart-row">
+            <div class="chart-container">
+                <canvas id="methodBar"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="threadPie"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Hottest Methods</h2>
+        <table class="trend-table">
+            <thead><tr><th>Method</th><th>CPU %</th><th>Samples</th></tr></thead>
+            <tbody>
+                {{#each hottestMethods}}
+                <tr {{#ifGte percentage 20}}style="background: #fff3cd;"{{/ifGte}}>
+                    <td><code title="{{fullName}}">{{name}}</code></td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="flex: 1; max-width: 100px; height: 8px; background: #e9ecef; border-radius: 4px;">
+                                <div style="height: 100%; width: {{percentage}}%; background: {{#ifGte percentage 20}}#dc3545{{else}}#667eea{{/ifGte}}; border-radius: 4px;"></div>
+                            </div>
+                            <span>{{percentage}}%</span>
+                        </div>
+                    </td>
+                    <td>{{sampleCount}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Hottest Threads</h2>
+        <table class="trend-table">
+            <thead><tr><th>Thread</th><th>CPU %</th><th>Samples</th></tr></thead>
+            <tbody>
+                {{#each hottestThreads}}
+                <tr>
+                    <td>{{name}}</td>
+                    <td>{{percentage}}%</td>
+                    <td>{{sampleCount}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+
+    {{#if hasAllocations}}
+    <div class="card">
+        <h2>Allocation Hotspots</h2>
+        <table class="trend-table">
+            <thead><tr><th>Site</th><th>Size</th><th>Count</th></tr></thead>
+            <tbody>
+                {{#each allocationHotspots}}
+                <tr>
+                    <td><code>{{site}}</code></td>
+                    <td>{{size}}</td>
+                    <td>{{count}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+    {{/if}}
+
+    {{#if hasIO}}
+    <div class="card">
+        <h2>I/O Hotspots</h2>
+        <table class="trend-table">
+            <thead><tr><th>Target</th><th>Duration</th><th>Size</th></tr></thead>
+            <tbody>
+                {{#each ioHotspots}}
+                <tr>
+                    <td><code>{{target}}</code></td>
+                    <td>{{formatDuration durationMs}}</td>
+                    <td>{{size}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+    {{/if}}
+    {{else}}
+    <div class="card" style="background: #e9ecef;">
+        <h2>No JFR Data Available</h2>
+        <p>No JFR profiling data was found. Ensure a JFR file is provided for analysis.</p>
+    </div>
+    {{/if}}
+
+    {{#if hasFindings}}
+    <div class="card">
+        <h2>Findings</h2>
+        <ul class="findings-list">
+            {{#each findings}}
+            <li class="finding severity-{{lowercase severity}}">
+                <div class="finding-header">
+                    <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+                </div>
+                <div class="finding-message">{{message}}</div>
+            </li>
+            {{/each}}
+        </ul>
+    </div>
+    {{/if}}
+</div>
+
+{{#if hasData}}
+<script>
+{{#if hasTemporal}}
+// Allocation Trend Chart
+{{#if allocationTrend}}
+new Chart(document.getElementById('allocationTrendChart'), {
+    type: 'line',
+    data: {
+        labels: [{{#each dumpLabels}}'Dump {{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            label: 'Allocation Bytes',
+            data: [{{#each allocationTrend.history}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+            borderColor: '{{#if allocationTrend.isIncreasing}}#dc3545{{else}}{{#if allocationTrend.isDecreasing}}#28a745{{else}}#667eea{{/if}}{{/if}}',
+            backgroundColor: '{{#if allocationTrend.isIncreasing}}rgba(220, 53, 69, 0.1){{else}}{{#if allocationTrend.isDecreasing}}rgba(40, 167, 69, 0.1){{else}}rgba(102, 126, 234, 0.1){{/if}}{{/if}}',
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Allocation Trend: {{allocationTrend.direction}} ({{allocationTrend.changeRate}}%)'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: { display: true, text: 'Bytes Allocated' }
+            }
+        }
+    }
+});
+{{/if}}
+
+// I/O Trend Chart
+{{#if ioTrend}}
+new Chart(document.getElementById('ioTrendChart'), {
+    type: 'line',
+    data: {
+        labels: [{{#each dumpLabels}}'Dump {{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            label: 'I/O Events',
+            data: [{{#each ioTrend.history}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+            borderColor: '{{#if ioTrend.isIncreasing}}#ffc107{{else}}{{#if ioTrend.isDecreasing}}#28a745{{else}}#764ba2{{/if}}{{/if}}',
+            backgroundColor: '{{#if ioTrend.isIncreasing}}rgba(255, 193, 7, 0.1){{else}}{{#if ioTrend.isDecreasing}}rgba(40, 167, 69, 0.1){{else}}rgba(118, 75, 162, 0.1){{/if}}{{/if}}',
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: 'I/O Events Trend: {{ioTrend.direction}} ({{ioTrend.changeRate}}%)'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: { display: true, text: 'Event Count' }
+            }
+        }
+    }
+});
+{{/if}}
+{{/if}}
+
+// Method CPU Bar Chart
+new Chart(document.getElementById('methodBar'), {
+    type: 'bar',
+    data: {
+        labels: [{{#each methodNames}}'{{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            label: 'CPU %',
+            data: [{{#each methodPercentages}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+            backgroundColor: '#667eea'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: { title: { display: true, text: 'CPU by Method' } },
+        scales: { x: { max: 100 } }
+    }
+});
+
+// Thread CPU Pie Chart
+new Chart(document.getElementById('threadPie'), {
+    type: 'doughnut',
+    data: {
+        labels: [{{#each threadNames}}'{{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            data: [{{#each threadPercentages}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+            backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#fa709a', '#fee140', '#ff9a9e']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'right' },
+            title: { display: true, text: 'CPU by Thread' }
+        }
+    }
+});
+</script>
+{{/if}}
+{{> partials/footer}}

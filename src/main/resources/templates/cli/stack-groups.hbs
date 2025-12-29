@@ -1,0 +1,70 @@
+{{!-- Stack groups analysis result template --}}
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}
+{{#bold "                          IDENTICAL STACK ANALYSIS" color=colorEnabled}}{{/bold}}
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}
+
+Severity: {{#severityColor severity color=colorEnabled}}{{severity}}{{/severityColor}}
+{{#if isMultiDump}}Dumps Analyzed: Multi-dump{{/if}}
+
+{{#if hasGroups}}
+Found {{groupCount}} group(s) with identical stacks ({{totalGroupedThreads}} threads total)
+Minimum group size: {{minGroupSize}}
+{{#if largestGroupSize}}
+Largest group: {{largestGroupSize}} threads at {{largestGroupTopFrame}}
+{{/if}}
+
+{{#if hasEvolution}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Group Evolution Summary:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+Growing Groups:   {{#ifGt growingGroupCount 0}}{{#warning growingGroupCount color=colorEnabled}}{{/warning}}{{else}}{{growingGroupCount}}{{/ifGt}}
+Shrinking Groups: {{shrinkingGroupCount}}
+Stuck Groups:     {{#ifGt stuckGroupCount 0}}{{#error stuckGroupCount color=colorEnabled}}{{/error}}{{else}}{{stuckGroupCount}}{{/ifGt}}
+
+{{#bold "Evolution Details:" color=colorEnabled}}{{/bold}}
+{{#each evolvingGroups}}
+{{#if isGrowing}}{{#warning "↑ GROWING" color=../colorEnabled}}{{/warning}}{{else}}{{#if isShrinking}}{{#success "↓ SHRINKING" color=../colorEnabled}}{{/success}}{{else}}{{#if isStuck}}{{#error "→ STUCK" color=../colorEnabled}}{{/error}}{{else}}{{dim "→ STABLE" color=../colorEnabled}}{{/if}}{{/if}}{{/if}} {{topFrame}}
+  Size: {{firstSize}} → {{lastSize}} ({{sizeChangeDisplay}}{{#if growthRate}}, {{growthRate}}%{{/if}})
+  Dumps: {{firstDump}} → {{lastDump}} ({{occurrences}} occurrence{{#ifGt occurrences 1}}s{{/ifGt}})
+{{/each}}
+
+{{/if}}
+
+{{#each groups}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=../colorEnabled}}{{/bold}}
+{{#cyan "Group #" color=../colorEnabled}}{{/cyan}}{{index}}: {{threadCount}} threads
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=../colorEnabled}}{{/bold}}
+
+Top Frame: {{#bold topFrame color=../colorEnabled}}{{/bold}}
+Stack Depth: {{stackDepth}}
+
+Threads:
+{{#each displayedThreadNames}}
+  • {{this}}
+{{/each}}
+{{#if hasMoreThreads}}
+  ... and {{moreThreadCount}} more threads
+{{/if}}
+
+Stack Trace:
+{{#each stackTrace}}
+    {{this}}
+{{/each}}
+
+{{/each}}
+{{else}}
+{{#success "✓ No significant thread groupings found" color=colorEnabled}}{{/success}}
+{{/if}}
+
+{{!-- Findings --}}
+{{#if hasFindings}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Findings:" color=colorEnabled}}{{/bold}}
+
+{{#each findings}}
+{{#severityColor severity color=../colorEnabled}}[{{severity}}]{{/severityColor}} {{message}}
+{{/each}}
+{{/if}}
+
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}

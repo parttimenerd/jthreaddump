@@ -1,0 +1,170 @@
+{{> partials/header}}
+<header>
+    <div class="container">
+        <h1>JNI Analysis</h1>
+        <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+        {{#if isMultiDump}}<span class="severity-badge severity-info">{{snapshotCount}} Dumps</span>{{/if}}
+    </div>
+</header>
+<div class="container">
+    <div class="card">
+        <h2>Summary</h2>
+        <div class="stat-grid">
+            <div class="stat-item">
+                <div class="stat-value" {{#if highNativeThreads}}style="color: var(--color-warning);"{{/if}}>{{maxNativeThreads}}</div>
+                <div class="stat-label">Native Method Threads</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" {{#if globalRefsGrowing}}style="color: var(--color-error);"{{/if}}>{{maxGlobalRefs}}</div>
+                <div class="stat-label">Max Global Refs</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{maxWeakRefs}}</div>
+                <div class="stat-label">Max Weak Refs</div>
+            </div>
+        </div>
+    </div>
+
+    {{#if globalRefsGrowing}}
+    <div class="card" style="background: #f8d7da; border: 2px solid #dc3545;">
+        <h2 style="color: #721c24;">⚠ JNI Global Refs Growing</h2>
+        <p>The number of JNI global references is increasing over time. This may indicate a native memory leak where global refs are being created but not released.</p>
+    </div>
+    {{/if}}
+
+    {{#if stuckNativeThreads}}
+    <div class="card" style="background: #fff3cd; border: 2px solid #ffc107;">
+        <h2 style="color: #856404;">⚠ Threads Stuck in Native Code</h2>
+        <p>Multiple threads appear to be stuck in the same native methods across dumps.</p>
+    </div>
+    {{/if}}
+
+    {{#if isMultiDump}}
+    <div class="card">
+        <h2>JNI Metrics Over Time</h2>
+        <div class="chart-row">
+            <div class="chart-container">
+                <canvas id="nativeThreadLine"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="globalRefLine"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Per-Dump Statistics</h2>
+        <table class="trend-table">
+            <thead>
+                <tr><th>Dump</th><th>Native Threads</th><th>Global Refs</th><th>Weak Refs</th></tr>
+            </thead>
+            <tbody>
+                {{#each snapshots}}
+                <tr>
+                    <td>Dump {{dumpIndex}}</td>
+                    <td>{{nativeMethodThreads}}</td>
+                    <td>{{globalRefs}}</td>
+                    <td>{{weakRefs}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+    {{/if}}
+
+    {{#if hasNativeThreads}}
+    <div class="card">
+        <h2>Threads in Native Code</h2>
+        <table class="trend-table">
+            <thead>
+                <tr><th>Thread</th><th>State</th><th>Native ID</th><th>Native Method</th></tr>
+            </thead>
+            <tbody>
+                {{#each nativeThreads}}
+                <tr>
+                    <td><strong>{{name}}</strong></td>
+                    <td><span class="thread-badge {{lowercase state}}">{{state}}</span></td>
+                    <td><code>{{nativeId}}</code></td>
+                    <td><code>{{topNativeMethod}}</code></td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+        {{#if hasMoreNativeThreads}}
+        <p style="color: #666; font-style: italic;">... and {{moreNativeThreadCount}} more threads</p>
+        {{/if}}
+    </div>
+    {{/if}}
+
+    {{#unless hasIssues}}
+    <div class="card" style="background: #d4edda; border: 2px solid #28a745;">
+        <h2 style="color: #155724;">✓ No JNI Issues Detected</h2>
+        <p>JNI usage appears normal.</p>
+    </div>
+    {{/unless}}
+
+    {{#if hasFindings}}
+    <div class="card">
+        <h2>Findings</h2>
+        <ul class="findings-list">
+            {{#each findings}}
+            <li class="finding severity-{{lowercase severity}}">
+                <div class="finding-header">
+                    <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+                </div>
+                <div class="finding-message">{{message}}</div>
+            </li>
+            {{/each}}
+        </ul>
+    </div>
+    {{/if}}
+</div>
+
+{{#if isMultiDump}}
+<script>
+// Native Thread Line Chart
+new Chart(document.getElementById('nativeThreadLine'), {
+    type: 'line',
+    data: {
+        labels: [{{#each dumpLabels}}'Dump {{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            label: 'Native Method Threads',
+            data: [{{#each nativeThreadData}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { title: { display: true, text: 'Native Method Threads' } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+
+// Global Ref Line Chart
+new Chart(document.getElementById('globalRefLine'), {
+    type: 'line',
+    data: {
+        labels: [{{#each dumpLabels}}'Dump {{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            label: 'Global Refs',
+            data: [{{#each globalRefData}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+            borderColor: '{{#if globalRefsGrowing}}#dc3545{{else}}#28a745{{/if}}',
+            backgroundColor: '{{#if globalRefsGrowing}}rgba(220, 53, 69, 0.1){{else}}rgba(40, 167, 69, 0.1){{/if}}',
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { title: { display: true, text: 'JNI Global References' } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+</script>
+{{/if}}
+{{> partials/footer}}

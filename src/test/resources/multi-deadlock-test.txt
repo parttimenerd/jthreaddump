@@ -1,0 +1,37 @@
+Full thread dump Java HotSpot(TM) 64-Bit Server VM (21.0.1+12-LTS-29 mixed mode, sharing):
+
+"DeadlockThread-A" #10 prio=5 tid=0x00007f8a1f010000 nid=0x5001 waiting for monitor entry
+   java.lang.Thread.State: BLOCKED (on object monitor)
+	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$multiDeadlockScenario$10(ThreadDumpGenerator.java:632)
+	- waiting to lock <0x00000007ffc11111> (a java.lang.Object)
+	- locked <0x00000007ffc22222> (a java.lang.Object)
+	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda.run(Unknown Source)
+
+"DeadlockThread-B" #11 prio=5 tid=0x00007f8a1f011000 nid=0x5002 waiting for monitor entry
+   java.lang.Thread.State: BLOCKED (on object monitor)
+	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$multiDeadlockScenario$11(ThreadDumpGenerator.java:648)
+	- waiting to lock <0x00000007ffc22222> (a java.lang.Object)
+	- locked <0x00000007ffc11111> (a java.lang.Object)
+	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda.run(Unknown Source)
+
+"DeadlockThread-C" #12 prio=5 tid=0x00007f8a1f012000 nid=0x5003 waiting for monitor entry
+   java.lang.Thread.State: BLOCKED (on object monitor)
+	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$multiDeadlockScenario$12(ThreadDumpGenerator.java:664)
+	- waiting to lock <0x00000007ffc33333> (a java.lang.Object)
+	- locked <0x00000007ffc44444> (a java.lang.Object)
+	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda.run(Unknown Source)
+
+"DeadlockThread-D" #13 prio=5 tid=0x00007f8a1f013000 nid=0x5004 waiting for monitor entry
+   java.lang.Thread.State: BLOCKED (on object monitor)
+	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$multiDeadlockScenario$13(ThreadDumpGenerator.java:680)
+	- waiting to lock <0x00000007ffc44444> (a java.lang.Object)
+	- locked <0x00000007ffc33333> (a java.lang.Object)
+	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda.run(Unknown Source)
+
+"WorkerThread-1" #14 prio=5 tid=0x00007f8a1f014000 nid=0x5005 runnable
+   java.lang.Thread.State: RUNNABLE
+	at java.lang.Math.sqrt(java.base@21/Native Method)
+	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$multiDeadlockScenario$14(ThreadDumpGenerator.java:695)
+	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda.run(Unknown Source)
+
+JNI global refs: 120

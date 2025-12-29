@@ -1,0 +1,51 @@
+{{!-- GC Activity analysis result template --}}
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}
+{{#bold "                            GC ACTIVITY ANALYSIS" color=colorEnabled}}{{/bold}}
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}
+
+Severity: {{#severityColor severity color=colorEnabled}}{{severity}}{{/severityColor}}
+{{#if isMultiDump}}Dumps Analyzed: {{snapshotCount}}{{/if}}
+
+{{!-- Summary --}}
+{{#bold "Summary:" color=colorEnabled}}{{/bold}}
+  Avg GC CPU:         {{#ifGt avgGcCpuPercentage 20}}{{#warning avgGcCpuPercentage color=colorEnabled}}{{/warning}}{{else}}{{avgGcCpuPercentage}}{{/ifGt}}%
+  Max GC CPU:         {{maxGcCpuPercentage}}%
+  Max Active GC:      {{maxRunnableGcThreads}} thread(s)
+  Max at Safepoint:   {{#ifGt maxThreadsAtSafepoint 0}}{{#warning maxThreadsAtSafepoint color=colorEnabled}}{{/warning}}{{else}}{{maxThreadsAtSafepoint}}{{/ifGt}} thread(s)
+
+{{#if potentialSTW}}
+{{#error "⚠ POTENTIAL STOP-THE-WORLD GC PAUSE DETECTED" color=colorEnabled}}{{/error}}
+{{/if}}
+
+{{#if highGcCpu}}
+{{#warning "⚠ HIGH GC CPU USAGE" color=colorEnabled}}{{/warning}}
+{{/if}}
+
+{{#if isMultiDump}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Per-Dump GC Snapshots:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+  Dump  | GC Threads | Active GC | App Threads | Safepoint | GC CPU %
+  ------+------------+-----------+-------------+-----------+---------
+{{#each snapshots}}
+  {{pad dumpIndex width=5}}| {{pad gcThreadCount width=10}} | {{pad runnableGcThreads width=9}} | {{pad appThreadCount width=11}} | {{pad threadsAtSafepoint width=9}} | {{gcCpuPercentage}}%
+{{/each}}
+{{/if}}
+
+{{!-- Findings --}}
+{{#if hasFindings}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Findings:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each findings}}
+{{#severityColor severity color=../colorEnabled}}[{{severity}}]{{/severityColor}} {{message}}
+{{/each}}
+{{/if}}
+
+{{#unless hasIssues}}
+{{#success "✓ No significant GC issues detected" color=colorEnabled}}{{/success}}
+{{/unless}}
+
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}

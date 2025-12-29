@@ -1,0 +1,15 @@
+2024-01-15 10:35:20
+Thread dump from jcmd 12345 Thread.print:
+
+"main" #1 prio=5 tid=0x00007f8a1f008000 nid=0x2803 runnable
+   java.lang.Thread.State: RUNNABLE
+	at java.io.FileInputStream.readBytes(java.base@21.0.1/Native Method)
+	at java.io.FileInputStream.read(java.base@21.0.1/FileInputStream.java:276)
+
+"GC Thread#0" #2 daemon prio=10 tid=0x00007f8a1f009000 nid=0x3003 runnable
+
+"VM Thread" #3 daemon prio=10 tid=0x00007f8a1f00a000 nid=0x4803 runnable
+
+"Service Thread" #4 daemon prio=9 tid=0x00007f8a1f00b000 nid=0x5003 runnable
+
+JNI global refs: 150

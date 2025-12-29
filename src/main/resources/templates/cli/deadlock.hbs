@@ -1,0 +1,89 @@
+{{!-- Deadlock analysis result template --}}
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}
+{{#bold "                           DEADLOCK ANALYSIS" color=colorEnabled}}{{/bold}}
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}
+
+Severity: {{#severityColor severity color=colorEnabled}}{{severity}}{{/severityColor}}
+{{#if isMultiDump}}Dumps Analyzed: Multi-dump ({{totalDumps}} dumps){{/if}}
+
+{{#if hasDeadlocks}}
+{{#error "⚠ DEADLOCKS DETECTED!" color=colorEnabled}}{{/error}}
+
+Total Deadlocks: {{deadlockCount}}
+JVM Reported: {{jvmReportedCount}}
+Max Cycle Size: {{maxCycleSize}}
+{{#if hasPersistentDeadlocks}}
+{{#error "PERSISTENT: " color=colorEnabled}}{{/error}}{{maxOccurrences}} occurrence(s) across dumps!
+{{/if}}
+
+{{#if isMultiDump}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "MULTI-DUMP TREND ANALYSIS:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+Overall Trend: {{#if overallTrend}}{{#ifEq overallTrend "ALL CLEAR"}}{{#success overallTrend color=colorEnabled}}{{/success}}{{else}}{{#ifEq overallTrend "IMPROVING - RESOLVED"}}{{#success overallTrend color=colorEnabled}}{{/success}}{{else}}{{#error overallTrend color=colorEnabled}}{{/error}}{{/ifEq}}{{/ifEq}}{{else}}UNKNOWN{{/if}}
+
+Dumps with deadlocks: {{dumpsWithDeadlocks}}/{{totalDumps}}
+Dumps clear:          {{dumpsClear}}/{{totalDumps}}
+
+Per-Dump Timeline:
+{{#each dumpLabels}}
+  Dump {{this}}: {{#ifEq ../deadlockCounts.[@index] 0}}{{#success ../dumpStatus.[@index] color=../../colorEnabled}}{{/success}}{{else}}{{#error ../dumpStatus.[@index] color=../../colorEnabled}}{{/error}}{{/ifEq}} ({{../deadlockCounts.[@index]}} deadlock{{#ifGt ../deadlockCounts.[@index] 1}}s{{/ifGt}})
+{{/each}}
+{{/if}}
+
+{{#if hasPersistentDeadlocks}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "DEADLOCK LIFECYCLE ANALYSIS:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each persistentDeadlocks}}
+{{#if isResolved}}{{#success "✓" color=../colorEnabled}}{{/success}}{{else}}{{#if isPersistent}}{{#error "●" color=../colorEnabled}}{{/error}}{{else}}{{#warning "◐" color=../colorEnabled}}{{/warning}}{{/if}}{{/if}} {{#each threadNames}}{{this}}{{#unless @last}} ↔ {{/unless}}{{/each}}
+  Lifecycle: Dumps {{firstSeen}} → {{lastSeen}} ({{occurrences}} occurrence{{#ifGt occurrences 1}}s{{/ifGt}}, span: {{dumpSpan}} dumps)
+  Persistence: {{persistencePercent}} of analysis period
+  Status: {{#ifEq status "ONGOING CRITICAL"}}{{#error status color=../colorEnabled}}{{/error}}{{else}}{{#ifEq status "RESOLVED"}}{{#success status color=../colorEnabled}}{{/success}}{{else}}{{status}}{{/ifEq}}{{/ifEq}}
+{{#if appearedLater}}
+  {{#warning "⚠ Appeared after initial dump - new deadlock introduced!" color=../colorEnabled}}{{/warning}}
+{{/if}}
+{{#if isResolved}}
+  {{#success "✓ Resolved - not present in final dumps" color=../colorEnabled}}{{/success}}
+{{/if}}
+{{#if isOngoing}}{{#unless isResolved}}
+  {{#error "🔴 CRITICAL: Still present in latest dump!" color=../colorEnabled}}{{/error}}
+{{/unless}}{{/if}}
+
+{{/each}}
+
+{{/if}}
+
+{{#each deadlocks}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=../colorEnabled}}{{/bold}}
+{{#error "Deadlock #" color=../colorEnabled}}{{/error}}{{index}}{{#if jvmReported}} {{#dim "(JVM reported)" color=../colorEnabled}}{{/dim}}{{/if}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=../colorEnabled}}{{/bold}}
+
+Threads involved: {{threadCount}}
+Thread names: {{#each threadNames}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+
+Wait Chain:
+{{#each threads}}
+  {{#red "→" color=../../colorEnabled}}{{/red}} {{#bold name color=../../colorEnabled}}{{/bold}}
+    State: {{#threadStateColor state color=../../colorEnabled}}{{/threadStateColor}}
+{{#if waitingForLock}}
+    Waiting for: {{#cyan waitingForLock color=../../colorEnabled}}{{/cyan}}{{#if waitingForClass}} ({{waitingForClass}}){{/if}}
+{{/if}}
+{{#if heldLocks.length}}
+    Holding locks: {{#each heldLocks}}{{#cyan this color=../../../colorEnabled}}{{/cyan}}{{#unless @last}}, {{/unless}}{{/each}}
+{{/if}}
+{{#if stackTrace}}
+    Stack trace:
+{{#each stackTrace}}
+      {{this}}
+{{/each}}
+{{/if}}
+{{/each}}
+{{/each}}
+{{else}}
+{{#success "✓ No deadlocks detected" color=colorEnabled}}{{/success}}
+{{/if}}
+
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}

@@ -1,0 +1,5 @@
+Scenario: mixed-workload
+Duration: PT10S
+Dump Interval: PT2S
+Dumps Captured: 6
+Timestamp: 2025-12-22T15:10:57.052437Z

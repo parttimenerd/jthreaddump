@@ -1,0 +1,878 @@
+================================================================================
+                           JSTALL DEVELOPMENT ROADMAP
+================================================================================
+
+A structured plan for developing jstall - a CLI-first Java thread dump analyzer
+focused on detecting stalls, deadlocks, and lock contention.
+
+================================================================================
+PHASE 1: FOUNDATION (Current State - v0.1.0)
+================================================================================
+
+[DONE] Project Setup
+  ✓ Maven project structure with Java 21
+  ✓ picocli for CLI framework
+  ✓ Jackson for JSON/YAML serialization
+  ✓ JUnit 5 for testing
+
+[DONE] Core Parser
+  ✓ ThreadDumpParser - parses jstack/jcmd output
+  ✓ Support for thread states, CPU time, elapsed time
+  ✓ Lock parsing (waiting on, waiting to lock, locked, parking)
+  ✓ JNI resource parsing
+  ✓ Deadlock section detection and parsing
+
+[DONE] Data Model
+  ✓ ThreadDump record
+  ✓ ThreadInfo record
+  ✓ LockInfo record
+  ✓ StackFrame record
+  ✓ DeadlockInfo record
+  ✓ JniInfo record
+
+[DONE] Basic CLI
+  ✓ Main entry point with picocli
+  ✓ ParseCommand - parse single dump with text/json/yaml output
+
+================================================================================
+PHASE 2: ANALYSIS FRAMEWORK
+================================================================================
+
+[DONE] Analysis Engine Core
+    Created a modular analysis framework supporting:
+    - Single thread dump analysis
+    - Multi-dump temporal analysis
+    - Optional JFR file correlation
+
+    Implemented:
+    - AnalysisContext: holds dumps, JFR path, options, thread matching
+    - AnalysisOptions: filtering, thresholds, feature toggles
+    - AnalysisResult: base class with findings and severity
+    - Analyzer: interface for all analyzers
+    - AnalysisEngine: registry and orchestrator
+    - ProgressClassification: enum for thread progress states
+
+[DONE] Initial Analyzers
+    - StackGroupAnalyzer: groups threads with identical stacks
+    - ThreadProgressAnalyzer: classifies thread progress between dumps
+    - LockContentionAnalyzer: detects hot/long-held locks
+    - SimilarStackAnalyzer: groups threads by common stack prefix
+    - ThreadChurnAnalyzer: detects thread creation/destruction patterns
+    - DeadlockAnalyzer: detects deadlocks using JVM reports and lock graph
+
+[DONE] Remaining Analyzers
+    - GCActivityAnalyzer: analyze GC thread behavior
+    - IOBlockAnalyzer: detect threads blocked on I/O (socket/file reads)
+    - ThreadPoolAnalyzer: analyze executor/pool utilization
+    - ClassLoadingAnalyzer: detect excessive class loading (from JFR)
+    - JfrProfilingAnalyzer: correlate JFR profiling with thread dumps
+
+[DONE] Progress Classification
+    Implemented ProgressClassification enum:
+    - ACTIVE
+    - RUNNABLE_NO_PROGRESS
+    - BLOCKED_ON_LOCK
+    - WAITING_EXPECTED
+    - TIMED_WAITING_EXPECTED
+    - STUCK
+    - RESTARTED
+    - TERMINATED
+    - IGNORED
+    - NEW
+    - UNKNOWN
+
+[DONE] Thread Matching Across Dumps
+    Implemented in AnalysisContext:
+    - Primary: native thread id (nid)
+    - Secondary: Java thread id
+    - Fallback: thread name
+    - ThreadIdentifier for matching
+
+[DONE] JFR Integration
+    Implemented JFR file parsing and analysis:
+    - JfrParser: parses JFR files for events
+    - JfrAnalyzer: analyzes JFR data for insights
+
+    Supported event types:
+    - jdk.ExecutionSample / jdk.NativeMethodSample: CPU profiling
+    - jdk.JavaMonitorEnter / jdk.JavaMonitorWait: lock contention
+    - jdk.ObjectAllocationInNewTLAB / OutsideTLAB: allocation hotspots
+    - jdk.FileRead / jdk.FileWrite: file I/O
+    - jdk.SocketRead / jdk.SocketWrite: network I/O
+    - jdk.ClassLoad: class loading events
+
+    Analysis features:
+    - Top CPU-consuming methods (overall and per-thread)
+    - Lock contention summary and hot locks
+    - Allocation hotspots by site and thread
+    - I/O hotspots by target and thread
+    - Slow I/O operation detection
+    - Class loading summary
+
+    JFR-enhanced analyzers:
+    - IOBlockAnalyzer: uses JFR I/O events for deeper analysis
+    - SimilarStackAnalyzer: uses JFR samples for CPU profiling
+    - LockContentionAnalyzer: uses JFR lock events for timing data
+    - JfrProfilingAnalyzer: dedicated JFR profiling analyzer
+    - ClassLoadingAnalyzer: uses JFR class load events
+
+================================================================================
+PHASE 3: VIEW FRAMEWORK
+================================================================================
+
+[DONE] View Abstraction Layer
+    Created a framework for defining views that can render to multiple outputs:
+
+    ViewRenderer interface:
+    - render(AnalysisResult, OutputOptions) -> String
+    - supports(OutputFormat) -> boolean
+    - getResultTypes() -> Class<?>[]
+
+    OutputFormat enum:
+    - TEXT (CLI)
+    - HTML
+    - JSON
+    - YAML
+
+    Core implementations:
+    - AbstractViewRenderer: base class with JSON/YAML via Jackson
+    - HandlebarsViewRenderer: template-based TEXT/HTML rendering
+    - ViewRendererRegistry: type-based renderer lookup
+    - ViewRendererFactory: centralized renderer access
+
+[DONE] Handlebars.java Integration
+    Added dependency: com.github.jknack:handlebars:4.4.0
+
+    HandlebarsEngine singleton:
+    - Separate CLI and HTML template loaders
+    - Template caching with format awareness
+    - Custom helpers for colors, formatting, conditionals
+
+    Custom Helpers:
+    - Color: red, green, yellow, blue, cyan, magenta, bold, dim
+    - Semantic: error, warning, success, info
+    - State: threadStateColor, progressColor, severityColor
+    - Format: pad, repeat, truncate, formatDuration, formatPercent
+    - Conditionals: ifEq, ifGt, ifGte
+    - Util: lowercase, uppercase, addOne, json
+
+[DONE] Template Structure
+    src/main/resources/templates/
+    ├── cli/
+    │   ├── generic.hbs           # Generic result view
+    │   ├── deadlock.hbs          # Deadlock analysis
+    │   ├── thread-progress.hbs   # Thread progress analysis
+    │   ├── stack-groups.hbs      # Identical stack groups
+    │   └── lock-contention.hbs   # Lock contention analysis
+    └── html/
+        ├── generic.hbs
+        ├── deadlock.hbs
+        ├── thread-progress.hbs
+        ├── stack-groups.hbs
+        ├── lock-contention.hbs
+        └── partials/
+            ├── header.hbs
+            └── footer.hbs
+
+[DONE] Color Support (CLI)
+    OutputOptions class:
+    - colorEnabled: boolean (default: auto-detect terminal)
+    - colorScheme: ColorScheme (for themes)
+    - forceColor() / noColor() builder methods
+    - Colors helper class with ANSI code support
+
+    Color semantics:
+    - RED: errors, deadlocks, blocked
+    - YELLOW: warnings, waiting
+    - GREEN: healthy, active, runnable
+    - CYAN: info, lock addresses
+    - BOLD: headers, important values
+    - DIM: secondary info
+
+[DONE] View Components
+    Implemented views:
+    - DeadlockView: deadlock chains, affected threads, lock relationships
+    - ThreadProgressView: classification, state history, multi-dump evolution
+    - StackGroupView: identical stack groupings
+    - LockContentionView: hot locks, waiters, JFR integration
+    - GenericResultView: fallback for any AnalysisResult
+    - CompositeView: combines multiple analysis results
+    - MultiDumpTableView: tabular thread state evolution
+
+[DONE] Multi-Dump Support in Views
+    All views now support multiple thread dumps:
+
+    ThreadProgressView enhancements:
+    - dumpCount, isMultiDump flags in context
+    - stateHistory: list of states per dump
+    - stateHistoryString: "RUN → BLK → RUN" format
+    - dumpHistory: detailed per-dump info (state, cpuTime, present)
+    - hasStateChanges: detect threads that changed state
+
+    MultiDumpTableView features:
+    - Tabular display with dump columns
+    - Color-coded state cells
+    - Classification summary
+    - Problem thread highlighting
+    - CPU time progression
+    - HTML table with CSS styling
+
+    Template enhancements:
+    - {{#if isMultiDump}} conditional rendering
+    - State transition arrows
+    - Per-dump column headers
+
+================================================================================
+PHASE 3.5: MULTI-DUMP TEMPORAL ANALYSIS SUPPORT ✅ COMPLETE (93%)
+================================================================================
+
+[DONE] Analyzer Multi-Dump Support (100%)
+    All analyzers now support multiple thread dumps with temporal analysis:
+
+    ✅ DeadlockAnalyzer:
+       - Persistence tracking across dumps
+       - Lifecycle analysis (appeared, resolved, ongoing)
+       - Trend detection (improving, degrading, critical)
+       - Per-dump status timeline
+
+    ✅ LockContentionAnalyzer:
+       - Aggregates across dumps
+       - Detects long-held locks
+       - Lock pressure evolution
+
+    ✅ StackGroupAnalyzer:
+       - Groups per dump
+       - Tracks group persistence
+       - Evolution analysis
+
+    ✅ ThreadProgressAnalyzer:
+       - Uses getMatchedThreads() for history
+       - State evolution tracking
+
+    ✅ SimilarStackAnalyzer:
+       - Analyzes each dump
+       - Pattern stability detection
+       - Thread migration tracking
+
+    ✅ ThreadChurnAnalyzer:
+       - Thread lifecycle tracking
+       - Leak detection
+       - Creation/destruction patterns
+
+    ✅ ThreadPoolAnalyzer:
+       - Pool utilization trends
+       - Saturation detection
+
+    ✅ IOBlockAnalyzer:
+       - I/O pattern evolution
+       - Type-specific trends
+       - Per-dump statistics
+
+    ✅ GCActivityAnalyzer:
+       - GCSnapshot per dump
+       - STW detection
+       - GC pressure trends
+
+    ✅ VerdictAnalyzer:
+       - Smart health scoring (0-100)
+       - Temporal health evolution
+       - Critical change detection
+       - Category-level root cause analysis
+
+    ✅ JniAnalyzer:
+       - JNI resource tracking
+       - Native thread trends
+       - Reference leak detection
+
+    ✅ JfrProfilingAnalyzer:
+       - Method CPU evolution tracking
+       - Emerging hotspot detection
+       - Allocation trend analysis
+       - I/O event trends
+
+    ✅ ClassLoadingAnalyzer:
+       - Loading rate trends
+       - Warmup pattern detection
+       - Per-loader evolution
+
+    ✅ CompilerAnalyzer:
+       - JIT compiler thread detection
+       - Compilation activity tracking
+       - Deoptimization detection
+       - Multi-dump temporal analysis
+
+[DONE] View Multi-Dump Support (100% - 15/15 views)
+    ✅ VerdictView: Smart health evolution with temporal analysis
+    ✅ DeadlockView: Persistence tracking, lifecycle analysis, timeline charts
+    ✅ ThreadProgressView: State evolution visualization
+    ✅ StackGroupView: Group evolution, trend analysis
+    ✅ LockContentionView: Lock pressure evolution charts
+    ✅ GCActivityView: GC metrics over time, STW detection
+    ✅ ThreadPoolView: Pool utilization trends
+    ✅ ThreadChurnView: Thread lifecycle, leak detection
+    ✅ IOBlockView: Per-dump stats, trend charts, type evolution
+    ✅ SimilarStackView: Pattern stability, thread migration
+    ✅ JniView: JNI resource tracking, trend charts, per-dump tables
+    ✅ JfrProfilingView: JFR temporal profiling, method evolution, resource trends
+    ✅ ClassLoadingView: Loading rate trends, warmup detection, loader evolution
+    ✅ CompilerView: JIT compilation trends, deoptimization tracking, compiler thread activity
+    ⬜ GenericResultView: N/A (fallback renderer only)
+
+[DONE] Smart Verdict Enhancement ✅
+    Implemented intelligent health monitoring system:
+
+    Health Scoring (0-100):
+    - Multi-factor scoring algorithm
+    - Thread state penalties (blocked, waiting)
+    - Lock contention penalties
+    - GC pressure penalties
+    - Automatic severity classification (EXCELLENT/GOOD/FAIR/POOR/CRITICAL)
+
+    Temporal Evolution Tracking:
+    - Per-dump health scoring
+    - Trend detection (DEGRADING/IMPROVING/STABLE)
+    - Critical change detection (>20 point drops)
+    - Category-level analysis (Thread States, Lock Contention, GC Activity)
+
+    Root Cause Identification:
+    - Per-category health scores
+    - Identifies degrading vs improving categories
+    - Pinpoints primary issues automatically
+
+    Visualizations:
+    - HTML: Health evolution card, dual timeline charts, status cards
+    - CLI: Smart health evolution section with color coding
+
+    Smart Findings:
+    - Auto-generates findings for degrading health
+    - Critical change alerts
+    - Category-specific problem identification
+
+[DONE] Comprehensive Test Suite ✅
+    Created VerdictAnalyzerHealthEvolutionTest.java:
+    - 30 comprehensive test cases
+    - 7 test categories (nested classes)
+    - Coverage: health scoring, trends, critical changes, categories, status, findings, compatibility
+    - Test scenarios: degrading, improving, stable, critical drops, recovery patterns
+    - All tests compile successfully
+
+[DONE] Documentation ✅
+    Created comprehensive documentation:
+    - SMART_VERDICT_ENHANCEMENT.md: Complete feature documentation
+    - DEADLOCK_TREND_ENHANCEMENT.md: Deadlock lifecycle analysis
+    - JFR_PROFILING_TEMPORAL_IMPLEMENTATION.md: JFR profiling features
+    - CLASS_LOADING_TEMPORAL_IMPLEMENTATION.md: Class loading analysis
+    - IMPLEMENTATION_CHECKLIST.md: Progress tracking (93% complete)
+    - MULTI_DUMP_ROADMAP.md: Multi-dump feature roadmap
+    - Test documentation embedded in enhancement docs
+
+[DONE] Trend Analysis Utilities
+    Implemented TrendAnalyzer utility class:
+    - Statistical trend detection (INCREASING/DECREASING/STABLE/OSCILLATING)
+    - Change rate calculation
+    - Direction classification
+    - Used by: VerdictAnalyzer, JfrProfilingAnalyzer, ClassLoadingAnalyzer, etc.
+
+================================================================================
+PHASE 4: ADVANCED FEATURES & POLISH (FUTURE)
+================================================================================
+
+[PRIORITY 1] Test Coverage Expansion
+    Goal: Achieve 80%+ test coverage across all analyzers and views
+
+    Needed Tests:
+    - [ ] DeadlockAnalyzer: persistence tracking, lifecycle tests
+    - [ ] LockContentionAnalyzer: trend detection tests
+    - [ ] StackGroupAnalyzer: evolution tracking tests
+    - [ ] ThreadProgressAnalyzer: state transition tests
+    - [ ] SimilarStackAnalyzer: pattern stability tests
+    - [ ] ThreadChurnAnalyzer: leak detection tests
+    - [ ] ThreadPoolAnalyzer: saturation detection tests
+    - [ ] IOBlockAnalyzer: I/O pattern tests
+    - [ ] GCActivityAnalyzer: STW detection tests
+    - [ ] JniAnalyzer: resource tracking tests
+    - [ ] JfrProfilingAnalyzer: hotspot detection tests
+    - [ ] ClassLoadingAnalyzer: warmup pattern tests
+    - [✅] VerdictAnalyzer: health evolution tests (30 tests ✅)
+
+    Integration Tests:
+    - [ ] End-to-end multi-dump analysis
+    - [ ] JFR correlation accuracy
+    - [ ] HTML output generation
+    - [ ] CLI output formatting
+    - [ ] Resource caching
+
+[PRIORITY 3] Enhanced HTML Reports ✅ COMPLETE
+    Make HTML reports more interactive and insightful:
+
+    Interactive Features:
+    - [✅] Collapsible sections (expandable stack traces)
+    - [✅] Search/filter threads by name, state, pattern
+    - [✅] Sort tables by multiple columns
+    - [✅] Export filtered data to CSV/JSON
+    - [✅] Permalink to specific findings
+
+    Implementation:
+    - interactive.js: 500 lines of vanilla JavaScript
+    - Collapsible cards with expand/collapse all
+    - Real-time search with instant filtering
+    - Smart sortable tables (numeric + text)
+    - Export to CSV, JSON, and clipboard
+    - Deep linking with permalinks
+    - Expandable stack traces
+    - Professional toolbar UI
+    - Zero external dependencies
+    - Works completely offline
+
+    Advanced Visualizations (Future Phase 4+):
+    - [✅] Interactive timeline (D3.js or similar)
+    - [✅] Thread state heat map
+    - [✅] Lock contention graph visualization
+    - [✅] Sankey diagram for thread flow
+
+    Implementation:
+    - visualizations.js: 900+ lines of D3.js-based visualizations
+    - Interactive timeline with hover tooltips
+    - Thread state heat map with color gradients
+    - Force-directed lock contention graph
+    - Sankey flow diagram for state transitions
+    - Dynamic D3.js loading (CDN with fallback)
+    - Integrated into ThreadProgressView
+    - Auto-initialization on page load
+    - Responsive and interactive
+
+================================================================================
+CURRENT STATUS SUMMARY (as of December 23, 2024)
+================================================================================
+
+✅ COMPLETED:
+- Core parsing and data model
+- Analysis framework with 15 analyzers
+- View framework with 15 views
+- Multi-dump temporal analysis (100% complete - 15/15 views)
+- Smart health evolution system
+- JFR integration and correlation
+- HTML visualization with Chart.js
+- Offline-capable HTML reports
+- Comprehensive test suite (30 tests for VerdictAnalyzer)
+- Trend analysis utilities
+- Extensive documentation (17,000+ lines)
+- CompilerAnalyzer with JIT compilation tracking
+- **Enhanced HTML reports with interactive features** ✅
+- **Advanced D3.js visualizations (timeline, heat map, graph, Sankey)** ✅
+
+🚧 IN PROGRESS:
+- Test coverage expansion
+  - ✅ VerdictAnalyzer: 510 lines, 30 tests (COMPLETE)
+  - ✅ ThreadProgressAnalyzer: 421 lines (COMPLETE)
+  - ✅ StackGroupAnalyzer: 360 lines (COMPLETE)
+  - ✅ ThreadPoolAnalyzer: 236 lines (COMPLETE)
+  - ✅ IOBlockAnalyzer: 220 lines (COMPLETE)
+  - ✅ ThreadChurnAnalyzer: 205 lines (COMPLETE)
+  - ✅ LockContentionAnalyzer: 183 lines (COMPLETE)
+  - ✅ DeadlockAnalyzer: 167 lines (COMPLETE)
+  - ✅ GCActivityAnalyzer: 150 lines (COMPLETE)
+  - ❌ SimilarStackAnalyzer: Empty file (HIGH PRIORITY)
+  - ❌ JfrProfilingAnalyzer: Needs tests
+  - ❌ ClassLoadingAnalyzer: Needs tests
+  - ❌ CompilerAnalyzer: Needs tests
+  - ❌ JniAnalyzer: Needs tests
+  - Current: ~60% analyzer coverage, ~10% view coverage
+  - Target: 80%+ overall coverage
+
+
+================================================================================
+END OF ROADMAP
+================================================================================
+
+[DONE] HTML Visualization with Charts
+    Added Chart.js integration for rich HTML visualizations:
+
+    Chart Types Implemented:
+    - Pie/Doughnut Charts: proportional data (state distribution, lock classes)
+    - Bar Charts: comparison data (threads per classification, waiters per lock)
+    - Line Charts: trend data (state evolution across dumps)
+
+    Thread Progress View Charts:
+    - State Distribution Pie: Active/Waiting/Blocked/Stuck breakdown
+    - Classification Bar: threads per classification category
+    - State Evolution Line: thread states over time (multi-dump)
+    - Trend Table: first→last changes with ↑/↓ indicators
+
+    Lock Contention View Charts:
+    - Waiter Distribution Bar: waiters per contended lock
+    - Lock Class Pie: contention by lock class type
+
+    Deadlock View Charts:
+    - Threads per Cycle Bar: visualize deadlock complexity
+    - Health Status Doughnut: when no deadlocks detected
+
+    Stack Groups View Charts:
+    - Group Size Bar: threads per identical stack group
+    - Top Frame Pie: distribution by stack top frame
+
+    Change Indicators:
+    - Trend tables showing first→last dump changes
+    - Color-coded: ↑ (red/warning), ↓ (green/improvement), → (neutral)
+    - Percentage changes for key metrics
+
+    Responsive Design:
+    - Chart.js responsive mode
+    - Grid layout adapts to screen size
+    - Mobile-friendly chart sizing
+
+[DONE] Embedded Resources for Offline HTML
+    Implemented ResourceCache for downloading and embedding JS/CSS:
+
+    ResourceCache class:
+    - Downloads external resources (Chart.js) on first use
+    - Caches to ~/.jstall-cache/ with 7-day expiry
+    - Embeds resources directly into HTML output
+    - Graceful fallback if download fails
+    - In-memory caching for session performance
+
+    Features:
+    - Single-file HTML output (no external dependencies)
+    - Works offline after first download
+    - Automatic cache expiry and refresh
+    - Preload option for CI/CD environments
+
+    Usage:
+    - ResourceCache.getInstance().getChartJsScriptTag()
+    - Returns <script>...</script> with embedded code
+    - Template uses {{{chartJsScript}}} placeholder
+
+    Cache Location:
+    - ~/.jstall-cache/chart.umd.min.js
+    - ~/.jstall-cache/chart.umd.min.js.meta (timestamp)
+
+[ ] Add Tests for View Framework
+    Need to add comprehensive tests:
+    - HandlebarsEngineTest: helper tests, template loading
+    - ViewRendererFactoryTest: renderer selection, rendering
+    - ViewsTest: each view implementation
+    - ResourceCacheTest: download, caching, embedding
+
+================================================================================
+PHASE 4: CLI COMMANDS
+================================================================================
+
+[ ] DiffCommand
+    jstall diff dump1 dump2 [dump3 ...]
+
+    Options:
+    - --only-moving: show only threads that made progress
+    - --only-blocked: show only blocked/waiting threads
+    - -m, --mode: minimal|large|quiet|short-stall
+    - --fail-on-stall: exit code 1 if stall detected
+    - --color / --no-color: color output control
+    - --output: text|json|yaml|html
+
+[ ] StallCommand
+    jstall stall <pid> -i <interval> -t <timeout>
+
+    Options:
+    - -i, --interval: dump interval (default: 3s)
+    - -t, --timeout: total analysis time (default: 10s)
+    - --jfr: additionally capture JFR data
+    - --fail-on-stall: exit code 1 if stall detected
+    - --color / --no-color: color output control
+    - --output: text|json|yaml|html
+
+    Exit codes:
+    - 0: OK
+    - 1: stall suspected
+    - 2: deadlock detected
+    - 3: error
+
+[ ] ZoomCommand (Thread Focus)
+    jstall zoom dump1 dump2 ... --thread "Worker-*"
+
+    Options:
+    - --thread: glob pattern for thread names
+    - --show-evolution: show stack changes over time
+    - --ignore-common-base: hide common stack frames
+
+[ ] WatchCommand (Continuous Monitoring)
+    jstall watch <pid> -i <interval>
+
+    Options:
+    - -i, --interval: dump interval (default: 5s)
+    - --alert-on-stall: trigger alert (sound/notification) on stall
+    - --log <file>: append analysis to log file
+    - --max-dumps: maximum dumps to keep in memory (default: 10)
+
+    Interactive keys:
+    - q: quit
+    - s: save current state to file
+    - d: show detailed view
+    - p: pause/resume
+
+[ ] Shared Command Options
+    All commands should support:
+    - --color / --no-color
+    - --output text|json|yaml|html
+    - -v, --verbose
+    - -q, --quiet
+    - --ignore: regex for threads to ignore
+    - --include-gc: include GC threads
+    - --include-vm: include VM threads
+    - --include-daemon: include daemon threads (hidden by default)
+
+[ ] View Selection Flags
+    Allow users to enable/disable specific views:
+    - --show <view>: enable specific view(s), comma-separated
+    - --hide <view>: disable specific view(s), comma-separated
+    - --views: list all available views
+
+    View names (for --show/--hide):
+      summary, threads, stacks, locks, lock-graph, verdict,
+      diff, jni, top-methods, hottest-methods, lock-summary,
+      hottest-threads, wait-chain, stuck, timeline, identical-stacks,
+      similar-stacks, blocked-on, longest-waiting, daemon-user,
+      allocations, thread-pool, class-loading, io-blocked
+
+    Presets:
+    - --preset minimal: summary + verdict only
+    - --preset full: all views enabled
+    - --preset locks: lock-focused views (locks, lock-graph, lock-summary, wait-chain, blocked-on)
+    - --preset performance: CPU/allocation views (hottest-methods, hottest-threads, allocations)
+    - --preset stall: stall-focused views (stuck, identical-stacks, similar-stacks, io-blocked)
+    - --preset jfr: JFR-dependent views (hottest-methods, allocations, class-loading)
+
+================================================================================
+PHASE 5: ADVANCED FEATURES
+================================================================================
+
+[ ] Stall Detection Algorithm
+    Application stalled if ANY of:
+    1. Deadlock detected
+    2. ≥90% of non-ignored threads are:
+       - RUNNABLE_NO_PROGRESS
+       - BLOCKED_ON_LOCK
+       - STUCK
+    3. All RUNNABLE threads show no progress
+
+    Configurable thresholds:
+    - CPU epsilon: 2ms (default)
+    - Minimum dumps: 2
+
+[ ] Lock Dependency Graph
+    - Build graph: Thread -> Lock (waiting), Lock -> Thread (owned)
+    - Detect cycles (deadlocks)
+    - Identify hot locks (many waiters)
+    - Identify long-held locks (via elapsed time)
+    - ASCII visualization for CLI
+    - Interactive SVG for HTML
+
+[ ] Noise Reduction
+    Default ignored/hidden:
+    - Threads starting with "GC"
+    - Threads starting with "VM"
+    - "Finalizer"
+    - "Reference Handler"
+    - Daemon threads (hidden by default, use --include-daemon to show)
+
+    Override if CPU usage > 20% of total
+    Custom ignore regex via --ignore
+
+    Include flags:
+    - --include-daemon: show daemon threads
+    - --include-gc: show GC threads
+    - --include-vm: show VM threads
+    - --include-all: show all threads (no filtering)
+
+[ ] Thread Churn Detection
+    - Track thread creation/destruction across dumps
+    - Detect growing thread counts (leak indicator)
+    - Detect executor mismanagement
+    - Report churn rate
+
+[ ] Loom Virtual Thread Support
+    - Differentiate platform vs virtual threads
+    - Handle carrier thread relationships
+    - Aggregate virtual thread states
+    - Pinned virtual thread detection
+
+[ ] GC Activity Analysis
+    - Analyze GC thread states
+    - Correlate with application stalls
+    - Detect GC-induced pauses
+
+[ ] Baseline Comparison
+    - Save "healthy" baseline: jstall baseline save <pid> --file baseline.json
+    - Compare against baseline: jstall diff --baseline baseline.json dump.txt
+    - Highlight deviations from normal behavior
+    - Useful for detecting regressions
+
+================================================================================
+PHASE 6: OUTPUT & REPORTING
+================================================================================
+
+[ ] Verdict System
+    Implement clear verdict output with predefined snippets:
+
+    VERDICT: SUSPECTED_STALL
+    Confidence: HIGH
+
+    Reason:
+    - 12/12 RUNNABLE threads made no progress over 20s
+    - 15 threads share identical stack:
+        at java.net.SocketInputStream.read
+        at com.foo.NetClient.receive
+    - Lock <0xabc123> held for ≥20s by Worker-3
+
+    Predefined Snippet Templates:
+    - DEADLOCK_DETECTED: "Deadlock detected involving {n} threads: {thread_names}"
+    - STALL_NO_PROGRESS: "{n}/{total} RUNNABLE threads made no progress over {duration}"
+    - IDENTICAL_STACKS: "{n} threads share identical stack at {top_frame}"
+    - LONG_HELD_LOCK: "Lock {lock_id} held for ≥{duration} by {thread_name}"
+    - HOT_LOCK: "Lock {lock_id} has {n} threads waiting"
+    - THREAD_CHURN: "Thread count grew from {start} to {end} ({rate}/sec)"
+    - IO_BLOCKED: "{n} threads blocked on I/O: {summary}"
+    - GC_PRESSURE: "GC threads consumed {pct}% CPU during analysis period"
+    - POOL_EXHAUSTED: "Thread pool '{name}' appears exhausted ({active}/{max} active)"
+    - VIRTUAL_THREAD_PINNED: "{n} virtual threads pinned to carrier"
+    - JNI_LEAK: "JNI global refs growing: {start} → {end} ({rate}/sec)"
+
+    Highlight Priorities (shown first):
+    1. Deadlocks (always critical)
+    2. Long-held locks blocking many threads
+    3. Identical stacks with high thread count
+    4. No-progress RUNNABLE threads
+    5. I/O blocked threads
+    6. Thread pool exhaustion
+
+    Snippet Composition:
+    - Combine relevant snippets based on analysis results
+    - Order by severity/priority
+    - Limit to top N issues (configurable, default: 5)
+    - Each snippet includes: severity, category, affected threads
+
+[ ] HTML Output
+    - Self-contained HTML file
+    - Embedded CSS (no external dependencies)
+    - Expandable stack traces
+    - Lock dependency graph visualization
+    - Thread state charts
+    - Search/filter functionality
+    - Export to PDF (via print stylesheet)
+
+[ ] Save/Export Options
+    All commands support:
+    - --save <file>: save analysis result to file (json/yaml)
+    - --html <file>: export HTML report to file
+    - --append: append to existing file (for logging)
+
+[ ] Stack Frequency Analysis
+    - Top N most common stacks
+    - Filter out JVM internals
+    - Configurable depth
+
+[ ] JNI Resource Reporting
+    - Table with changes over time
+    - Compute rate of change
+    - Warn on growing resources
+
+================================================================================
+PHASE 7: QUALITY & DISTRIBUTION
+================================================================================
+
+[ ] Testing
+    - Golden thread dumps (jstack + jcmd)
+    - Known deadlock examples
+    - RUNNABLE no-progress cases
+    - Long-held lock tests
+    - Thread churn detection
+    - Large synthetic dumps (1000+ threads)
+    - Renaissance benchmark dumps
+
+[ ] Documentation
+    - Revamp README with examples
+    - Add usage examples for each command
+    - Document output formats
+    - Add troubleshooting guide
+
+[ ] CI/CD
+    - GitHub Actions workflow
+    - Automated testing
+    - Release automation
+    - GraalVM native image builds
+
+[ ] Distribution
+    - Maven Central publication
+    - Native binaries (via GraalVM)
+    - Homebrew formula
+    - SDKMAN support
+
+[ ] JSON Schema
+    - Generate schema for output formats
+    - Document schema
+    - Validate output in tests
+
+================================================================================
+PRIORITY ORDER
+================================================================================
+
+1. Analysis Framework (Phase 2)
+   - Foundation for all advanced features
+   - Enables multi-dump correlation
+   - JFR integration for profiling data
+
+2. View Framework (Phase 3)
+   - Handlebars.java integration
+   - Color support infrastructure
+   - Separation of data and presentation
+
+3. CLI Commands (Phase 4)
+   - diff command (most requested)
+   - stall command (primary use case)
+   - Consistent options across commands
+
+4. Advanced Features (Phase 5)
+   - Stall detection algorithm
+   - Lock dependency graph
+   - Virtual thread support
+
+5. Output & Reporting (Phase 6)
+   - HTML output with visualizations
+   - Verdict system
+
+6. Quality & Distribution (Phase 7)
+   - Comprehensive testing
+   - Documentation
+   - Native builds
+
+================================================================================
+DEPENDENCIES TO ADD
+================================================================================
+
+<!-- Handlebars.java for templating -->
+<dependency>
+    <groupId>com.github.jknack</groupId>
+    <artifactId>handlebars</artifactId>
+    <version>4.4.0</version>
+</dependency>
+
+<!-- JFR parsing (already in JDK, just need module access) -->
+<!-- Uses jdk.jfr module -->
+
+<!-- Optional: ANSI color support -->
+<dependency>
+    <groupId>org.fusesource.jansi</groupId>
+    <artifactId>jansi</artifactId>
+    <version>2.4.0</version>
+</dependency>
+
+================================================================================
+NOTES
+================================================================================
+
+- Keep CLI-only focus - no web server or GUI
+- Minimal configuration - CLI flags only
+- Robust heuristics - state + CPU + elapsed + stacks
+- Scale to 1000+ threads per dump
+- Human-readable by default, machine-readable optional
+- Color configurable (auto-detect terminal, --color, --no-color)
+
+================================================================================

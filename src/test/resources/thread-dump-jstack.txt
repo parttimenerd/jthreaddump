@@ -1,0 +1,39 @@
+2024-01-15 10:30:45
+JNI global refs memory usage: 3363, weak refs: 70049
+JNI global refs: 247, weak refs: 3181
+
+	at com.example.Worker.run(Worker.java:30)
+	- waiting to lock <0x00000007ffc12345> (a java.lang.Object)
+	at com.example.Worker.processRequest(Worker.java:45)
+   java.lang.Thread.State: BLOCKED (on object monitor)
+"Worker-2" #11 prio=5 os_prio=31 cpu=0.00ms elapsed=8.45s tid=0x00007f8a1f011000 nid=0x6003 waiting for monitor entry  [0x00007ffee9e21000]
+
+	at com.example.Worker.processRequest(Worker.java:67)
+	at java.net.SocketInputStream.read(java.base@21.0.1/SocketInputStream.java:186)
+	at java.net.SocketInputStream.socketRead0(java.base@21.0.1/Native Method)
+   java.lang.Thread.State: RUNNABLE
+"Worker-1" #10 prio=5 os_prio=31 cpu=2500.00ms elapsed=8.50s tid=0x00007f8a1f010000 nid=0x5803 runnable  [0x00007ffee9d20000]
+
+	at java.lang.ref.Finalizer$FinalizerThread.run(java.base@21.0.1/Finalizer.java:172)
+	at java.lang.ref.ReferenceQueue.remove(java.base@21.0.1/ReferenceQueue.java:176)
+	- locked <0x00000007ffc00000> (a java.lang.ref.ReferenceQueue$Lock)
+	at java.lang.ref.ReferenceQueue.remove(java.base@21.0.1/ReferenceQueue.java:155)
+	- waiting on <0x00000007ffc00000> (a java.lang.ref.ReferenceQueue$Lock)
+	at java.lang.Object.wait(java.base@21.0.1/Native Method)
+   java.lang.Thread.State: WAITING (on object monitor)
+"Finalizer" #3 daemon prio=8 os_prio=31 cpu=0.25ms elapsed=10.19s tid=0x00007f8a1f00a000 nid=0x4803 in Object.wait()  [0x00007ffee9c1f000]
+
+	at java.lang.ref.Reference$ReferenceHandler.run(java.base@21.0.1/Reference.java:208)
+	at java.lang.ref.Reference.processPendingReferences(java.base@21.0.1/Reference.java:246)
+	at java.lang.ref.Reference.waitForReferencePendingList(java.base@21.0.1/Native Method)
+   java.lang.Thread.State: WAITING (on object monitor)
+"Reference Handler" #2 daemon prio=10 os_prio=31 cpu=0.50ms elapsed=10.20s tid=0x00007f8a1f009000 nid=0x3003 waiting on condition  [0x00007ffee9f24000]
+
+	at com.example.Main.readFile(Main.java:42)
+	at java.io.BufferedInputStream.fill(java.base@21.0.1/BufferedInputStream.java:244)
+	at java.io.FileInputStream.read(java.base@21.0.1/FileInputStream.java:276)
+	at java.io.FileInputStream.readBytes(java.base@21.0.1/Native Method)
+   java.lang.Thread.State: RUNNABLE
+"main" #1 prio=5 os_prio=31 cpu=125.50ms elapsed=10.25s tid=0x00007f8a1f008000 nid=0x2803 runnable  [0x00007ffee9c1e000]
+
+Full thread dump Java HotSpot(TM) 64-Bit Server VM (21.0.1+12-LTS-29 mixed mode, sharing):

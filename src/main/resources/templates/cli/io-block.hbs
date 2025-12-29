@@ -1,0 +1,66 @@
+{{!-- I/O Block analysis result template --}}
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}
+{{#bold "                             I/O BLOCK ANALYSIS" color=colorEnabled}}{{/bold}}
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}
+
+Severity: {{#severityColor severity color=colorEnabled}}{{severity}}{{/severityColor}}
+
+{{!-- Summary --}}
+{{#bold "Summary:" color=colorEnabled}}{{/bold}}
+  Total I/O Blocked:  {{#ifGt totalBlocked 5}}{{#warning totalBlocked color=colorEnabled}}{{/warning}}{{else}}{{totalBlocked}}{{/ifGt}} thread(s)
+  Most Common Type:   {{mostCommonType}}
+
+{{#if hasBlocked}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "I/O Type Breakdown:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each byType}}
+  {{pad type width=20}}: {{count}} thread(s)
+{{/each}}
+
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Blocked Threads:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each blockedThreads}}
+  {{#cyan name color=../colorEnabled}}{{/cyan}} ({{ioType}})
+    Blocking at: {{blockingFrame}}
+{{/each}}
+{{#if hasMoreBlocked}}
+  ... and {{moreBlockedCount}} more
+{{/if}}
+{{else}}
+{{#success "✓ No threads blocked on I/O detected" color=colorEnabled}}{{/success}}
+{{/if}}
+
+{{#if hasJfrData}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "JFR I/O Analysis:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+  Total I/O Events:   {{jfrAnalysis.totalEvents}}
+  Total I/O Time:     {{formatDuration jfrAnalysis.totalDurationMs}}
+  Total I/O Size:     {{jfrAnalysis.totalBytes}}
+  Slow Operations:    {{jfrAnalysis.slowOpCount}}
+
+{{#if jfrAnalysis.hotspots}}
+{{#bold "I/O Hotspots:" color=colorEnabled}}{{/bold}}
+{{#each jfrAnalysis.hotspots}}
+  • {{target}} ({{durationMs}}ms, {{size}})
+{{/each}}
+{{/if}}
+{{/if}}
+
+{{!-- Findings --}}
+{{#if hasFindings}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Findings:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each findings}}
+{{#severityColor severity color=../colorEnabled}}[{{severity}}]{{/severityColor}} {{message}}
+{{/each}}
+{{/if}}
+
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}

@@ -1,0 +1,286 @@
+{{> partials/header}}
+<header>
+    <div class="container">
+        <h1>I/O Block Analysis</h1>
+        <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+        {{#if isMultiDump}}<span class="severity-badge severity-info">{{dumpCount}} Dumps</span>{{/if}}
+    </div>
+</header>
+<div class="container">
+    <div class="card">
+        <h2>Summary</h2>
+        <div class="stat-grid">
+            <div class="stat-item">
+                <div class="stat-value" {{#ifGt totalBlocked 5}}style="color: var(--color-warning);"{{/ifGt}}>{{totalBlocked}}</div>
+                <div class="stat-label">I/O Blocked Threads</div>
+                {{#if isMultiDump}}
+                <div class="stat-change {{trendDirection}}">{{trendDisplay}}</div>
+                {{/if}}
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{mostCommonType}}</div>
+                <div class="stat-label">Most Common Type</div>
+            </div>
+            {{#if hasJfrData}}
+            <div class="stat-item">
+                <div class="stat-value">{{jfrAnalysis.totalEvents}}</div>
+                <div class="stat-label">JFR I/O Events</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{formatDuration jfrAnalysis.totalDurationMs}}</div>
+                <div class="stat-label">Total I/O Time</div>
+            </div>
+            {{/if}}
+        </div>
+    </div>
+
+    {{#if hasBlocked}}
+    <!-- Charts Section -->
+    <div class="card">
+        <h2>I/O Type Distribution</h2>
+        <div class="chart-row">
+            <div class="chart-container">
+                <canvas id="ioTypePie"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="ioTypeBar"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {{#if isMultiDump}}
+    <!-- Multi-dump trend chart -->
+    <div class="card">
+        <h2>I/O Blocked Threads Over Time</h2>
+        <div class="chart-container" style="height: 300px;">
+            <canvas id="ioTrendLine"></canvas>
+        </div>
+    </div>
+
+    <!-- Per-dump statistics table -->
+    <div class="card">
+        <h2>Per-Dump Statistics</h2>
+        <table class="trend-table">
+            <thead>
+                <tr>
+                    <th>Dump</th>
+                    <th>Total Blocked</th>
+                    <th>Socket Read</th>
+                    <th>File Read</th>
+                    <th>Database</th>
+                    <th>Selector</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each perDumpStats}}
+                <tr>
+                    <td>Dump {{dumpIndex}}</td>
+                    <td {{#ifGt blockedCount 5}}style="color: var(--color-warning);"{{/ifGt}}>{{blockedCount}}</td>
+                    <td>{{socketRead}}</td>
+                    <td>{{fileRead}}</td>
+                    <td>{{database}}</td>
+                    <td>{{selector}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+        {{#if trendChange}}
+        <p style="margin-top: 10px; color: {{#ifGt trendChange 0}}var(--color-warning){{else}}{{#ifGt 0 trendChange}}var(--color-ok){{else}}#666{{/ifGt}}{{/ifGt}};">
+            Trend: {{trendFirst}} → {{trendLast}} ({{trendDisplay}})
+        </p>
+        {{/if}}
+    </div>
+
+    <!-- By type over time stacked chart -->
+    <div class="card">
+        <h2>I/O Types Over Time</h2>
+        <div class="chart-container" style="height: 300px;">
+            <canvas id="ioTypeStackedLine"></canvas>
+        </div>
+    </div>
+    {{/if}}
+
+    <div class="card">
+        <h2>Blocked Threads by Type</h2>
+        <table class="trend-table">
+            <thead>
+                <tr><th>I/O Type</th><th>Count</th><th>Percentage</th></tr>
+            </thead>
+            <tbody>
+                {{#each byType}}
+                <tr>
+                    <td>{{type}}</td>
+                    <td>{{count}}</td>
+                    <td>{{formatPercent count ../totalBlocked}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Blocked Thread Details</h2>
+        {{#each blockedThreads}}
+        <div style="padding: 12px; margin: 8px 0; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--color-warning);">
+            <p><strong>{{name}}</strong> <span class="thread-badge">{{ioType}}</span> {{#if ../isMultiDump}}<span class="thread-badge" style="background: #e9ecef;">Dump {{dumpIndex}}</span>{{/if}}</p>
+            <p style="color: #666; font-size: 0.9rem; font-family: monospace;">{{blockingFrame}}</p>
+        </div>
+        {{/each}}
+        {{#if hasMoreBlocked}}
+        <p style="color: #666; font-style: italic;">... and {{moreBlockedCount}} more blocked threads</p>
+        {{/if}}
+    </div>
+    {{else}}
+    <div class="card" style="background: #d4edda; border: 2px solid #28a745;">
+        <h2 style="color: #155724;">✓ No I/O Blocking Detected</h2>
+        <p>No threads are currently blocked on I/O operations.</p>
+    </div>
+    {{/if}}
+
+    {{#if hasJfrData}}
+    <div class="card">
+        <h2>JFR I/O Analysis</h2>
+        <div class="stat-grid">
+            <div class="stat-item">
+                <div class="stat-value">{{jfrAnalysis.totalBytes}}</div>
+                <div class="stat-label">Total I/O Size</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" {{#ifGt jfrAnalysis.slowOpCount 0}}style="color: var(--color-warning);"{{/ifGt}}>{{jfrAnalysis.slowOpCount}}</div>
+                <div class="stat-label">Slow Operations</div>
+            </div>
+        </div>
+
+        {{#if jfrAnalysis.hotspots}}
+        <h3 style="margin-top: 20px;">I/O Hotspots</h3>
+        <table class="trend-table">
+            <thead>
+                <tr><th>Target</th><th>Duration</th><th>Size</th></tr>
+            </thead>
+            <tbody>
+                {{#each jfrAnalysis.hotspots}}
+                <tr>
+                    <td><code style="font-size: 0.85rem;">{{target}}</code></td>
+                    <td>{{formatDuration durationMs}}</td>
+                    <td>{{size}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+        {{/if}}
+    </div>
+    {{/if}}
+
+    {{#if hasFindings}}
+    <div class="card">
+        <h2>Findings</h2>
+        <ul class="findings-list">
+            {{#each findings}}
+            <li class="finding severity-{{lowercase severity}}">
+                <div class="finding-header">
+                    <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+                </div>
+                <div class="finding-message">{{message}}</div>
+            </li>
+            {{/each}}
+        </ul>
+    </div>
+    {{/if}}
+</div>
+
+{{#if hasBlocked}}
+<script>
+// I/O Type Pie Chart
+new Chart(document.getElementById('ioTypePie'), {
+    type: 'doughnut',
+    data: {
+        labels: [{{#each byType}}'{{type}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            data: [{{#each byType}}{{count}}{{#unless @last}}, {{/unless}}{{/each}}],
+            backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#fa709a']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'right' },
+            title: { display: true, text: 'I/O Blocking by Type' }
+        }
+    }
+});
+
+// I/O Type Bar Chart
+new Chart(document.getElementById('ioTypeBar'), {
+    type: 'bar',
+    data: {
+        labels: [{{#each byType}}'{{type}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            label: 'Blocked Threads',
+            data: [{{#each byType}}{{count}}{{#unless @last}}, {{/unless}}{{/each}}],
+            backgroundColor: '#667eea'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Blocked Thread Count' }
+        },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+
+{{#if isMultiDump}}
+// I/O Trend Line Chart
+new Chart(document.getElementById('ioTrendLine'), {
+    type: 'line',
+    data: {
+        labels: [{{#each dumpLabels}}'Dump {{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            label: 'I/O Blocked Threads',
+            data: [{{#each blockedCountsPerDump}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { title: { display: true, text: 'I/O Blocked Threads Over Time' } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+
+// I/O Type Stacked Line Chart
+new Chart(document.getElementById('ioTypeStackedLine'), {
+    type: 'line',
+    data: {
+        labels: [{{#each dumpLabels}}'Dump {{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [
+            {{#each typeDatasets}}
+            {
+                label: '{{label}}',
+                data: [{{#each data}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+                borderColor: '{{color}}',
+                backgroundColor: '{{color}}22',
+                fill: true,
+                tension: 0.3
+            }{{#unless @last}},{{/unless}}
+            {{/each}}
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { title: { display: true, text: 'I/O Types Over Time' } },
+        scales: { y: { beginAtZero: true, stacked: true } }
+    }
+});
+{{/if}}
+</script>
+{{/if}}
+{{> partials/footer}}

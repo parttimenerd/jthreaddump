@@ -1,0 +1,283 @@
+{{> partials/header}}
+<header>
+    <div class="container">
+        <h1>Application Verdict</h1>
+        <span class="severity-badge severity-{{lowercase severity}}" style="font-size: 1.2rem; padding: 10px 24px;">
+            {{#if isHealthy}}✓ HEALTHY{{else}}{{#if isDeadlock}}✗ DEADLOCK{{else}}⚠ {{status}}{{/if}}{{/if}}
+        </span>
+    </div>
+</header>
+<div class="container">
+    <!-- Main Verdict Card -->
+    <div class="card" style="{{#if isHealthy}}background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border: 2px solid #28a745;{{else}}{{#if isCritical}}background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); border: 2px solid #dc3545;{{else}}background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%); border: 2px solid #ffc107;{{/if}}{{/if}}">
+        <h2 style="{{#if isHealthy}}color: #155724;{{else}}{{#if isCritical}}color: #721c24;{{else}}color: #856404;{{/if}}{{/if}}">
+            {{statusDescription}}
+        </h2>
+        <div class="stat-grid" style="margin-top: 20px;">
+            <div class="stat-item" style="background: rgba(255,255,255,0.7);">
+                <div class="stat-value">{{dumpCount}}</div>
+                <div class="stat-label">Dumps Analyzed</div>
+            </div>
+            <div class="stat-item" style="background: rgba(255,255,255,0.7);">
+                <div class="stat-value">{{totalThreads}}</div>
+                <div class="stat-label">Total Threads</div>
+            </div>
+        </div>
+    </div>
+
+    {{#if hasHealthEvolution}}
+    <!-- Smart Health Evolution -->
+    <div class="card" data-collapsible style="{{#if isDegrading}}background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%); border: 2px solid #ffc107;{{else}}{{#if isImproving}}background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border: 2px solid #28a745;{{else}}background: white;{{/if}}{{/if}}">
+        <h2 style="{{#if isDegrading}}color: #856404;{{else}}{{#if isImproving}}color: #155724;{{/if}}{{/if}}">
+            📊 Health Evolution Analysis
+            <span class="severity-badge severity-{{#if isDegrading}}warning{{else}}{{#if isImproving}}ok{{else}}info{{/if}}{{/if}}" style="margin-left: 12px;">
+                {{healthTrend}}
+            </span>
+        </h2>
+
+        <div class="stat-grid" style="margin-top: 16px;">
+            <div class="stat-item">
+                <div class="stat-value" style="color: {{#ifGte firstScore 75}}#28a745{{else}}{{#ifGte firstScore 50}}#ffc107{{else}}#dc3545{{/ifGte}}{{/ifGte}};">
+                    {{firstScore}}
+                </div>
+                <div class="stat-label">Initial Health Score</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" style="color: {{#ifGte lastScore 75}}#28a745{{else}}{{#ifGte lastScore 50}}#ffc107{{else}}#dc3545{{/ifGte}}{{/ifGte}};">
+                    {{lastScore}}
+                </div>
+                <div class="stat-label">Current Health Score</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" style="color: {{#if isDegrading}}#dc3545{{else}}{{#if isImproving}}#28a745{{else}}#17a2b8{{/if}}{{/if}};">
+                    {{scoreChange}}
+                </div>
+                <div class="stat-label">Score Change</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" style="color: {{#if isDegrading}}#dc3545{{else}}{{#if isImproving}}#28a745{{else}}#17a2b8{{/if}}{{/if}};">
+                    {{changePercent}}%
+                </div>
+                <div class="stat-label">Change Percent</div>
+            </div>
+        </div>
+
+        {{#if hasCriticalChange}}
+        <div style="background: #f8d7da; padding: 12px; border-radius: 4px; margin-top: 16px; border-left: 4px solid #dc3545;">
+            <strong style="color: #721c24;">🔴 CRITICAL HEALTH DROP DETECTED</strong>
+            <p style="margin: 8px 0 0 0; color: #721c24;">
+                Significant health degradation occurred at dump {{criticalChangeDump}}. Immediate investigation recommended.
+            </p>
+        </div>
+        {{/if}}
+
+        {{#if hasDegradingCategories}}
+        <div style="background: #fff3cd; padding: 12px; border-radius: 4px; margin-top: 16px; border-left: 4px solid #ffc107;">
+            <strong style="color: #856404;">⚠ Degrading Categories:</strong>
+            <p style="margin: 8px 0 0 0; color: #856404;">
+                {{#each degradingCategories}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+            </p>
+        </div>
+        {{/if}}
+
+        {{#if hasImprovingCategories}}
+        <div style="background: #d4edda; padding: 12px; border-radius: 4px; margin-top: 16px; border-left: 4px solid #28a745;">
+            <strong style="color: #155724;">✓ Improving Categories:</strong>
+            <p style="margin: 8px 0 0 0; color: #155724;">
+                {{#each improvingCategories}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+            </p>
+        </div>
+        {{/if}}
+
+        <div class="chart-row" style="margin-top: 20px;">
+            <div class="chart-container">
+                <canvas id="healthEvolutionChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="categoryEvolutionChart"></canvas>
+            </div>
+        </div>
+    </div>
+    {{/if}}
+
+    <!-- Time Distribution -->
+    <div class="card">
+        <h2>Where Is Your Application Spending Time?</h2>
+        <div class="chart-row">
+            <div class="chart-container">
+                <canvas id="timeDistPie"></canvas>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                <table class="trend-table" style="max-width: 300px;">
+                    <tbody>
+                        <tr>
+                            <td><span style="display: inline-block; width: 12px; height: 12px; background: #28a745; border-radius: 2px; margin-right: 8px;"></span>Running (CPU)</td>
+                            <td><strong>{{runningPercent}}%</strong></td>
+                        </tr>
+                        <tr>
+                            <td><span style="display: inline-block; width: 12px; height: 12px; background: #dc3545; border-radius: 2px; margin-right: 8px;"></span>Blocked (Locks)</td>
+                            <td><strong {{#ifGte blockedPercent 20}}style="color: #dc3545;"{{/ifGte}}>{{blockedPercent}}%</strong></td>
+                        </tr>
+                        <tr>
+                            <td><span style="display: inline-block; width: 12px; height: 12px; background: #ffc107; border-radius: 2px; margin-right: 8px;"></span>Waiting</td>
+                            <td><strong>{{waitingPercent}}%</strong></td>
+                        </tr>
+                        <tr>
+                            <td><span style="display: inline-block; width: 12px; height: 12px; background: #17a2b8; border-radius: 2px; margin-right: 8px;"></span>I/O Operations</td>
+                            <td><strong {{#ifGte ioPercent 30}}style="color: #17a2b8;"{{/ifGte}}>{{ioPercent}}%</strong></td>
+                        </tr>
+                        <tr>
+                            <td><span style="display: inline-block; width: 12px; height: 12px; background: #6c757d; border-radius: 2px; margin-right: 8px;"></span>Garbage Collection</td>
+                            <td><strong {{#ifGte gcPercent 20}}style="color: #6c757d;"{{/ifGte}}>{{gcPercent}}%</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Status -->
+    <div class="card">
+        <h2>Analysis Categories</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+            {{#each verdictItems}}
+            <div style="padding: 16px; border-radius: 8px; border-left: 4px solid {{#if isOk}}#28a745{{else}}{{#if isWarning}}#ffc107{{else}}#dc3545{{/if}}{{/if}}; background: {{#if isOk}}#f8fff8{{else}}{{#if isWarning}}#fffcf0{{else}}#fff8f8{{/if}}{{/if}};">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    {{#if isOk}}<span style="color: #28a745; font-size: 1.5rem;">✓</span>
+                    {{else}}{{#if isWarning}}<span style="color: #ffc107; font-size: 1.5rem;">⚠</span>
+                    {{else}}<span style="color: #dc3545; font-size: 1.5rem;">✗</span>{{/if}}{{/if}}
+                    <strong>{{category}}</strong>
+                </div>
+                <p style="margin: 0; color: #666;">{{summary}}</p>
+            </div>
+            {{/each}}
+        </div>
+    </div>
+
+    {{#if hasFindings}}
+    <div class="card">
+        <h2>Key Findings</h2>
+        <ul class="findings-list">
+            {{#each findings}}
+            <li class="finding severity-{{lowercase severity}}">
+                <div class="finding-header">
+                    <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+                </div>
+                <div class="finding-message">{{message}}</div>
+            </li>
+            {{/each}}
+        </ul>
+    </div>
+    {{/if}}
+</div>
+
+<script>
+{{#if hasHealthEvolution}}
+// Health Evolution Chart
+new Chart(document.getElementById('healthEvolutionChart'), {
+    type: 'line',
+    data: {
+        labels: [{{#each dumpLabels}}'Dump {{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            label: 'Health Score',
+            data: [{{#each healthScoresPerDump}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+            borderColor: '{{#if isDegrading}}#dc3545{{else}}{{#if isImproving}}#28a745{{else}}#17a2b8{{/if}}{{/if}}',
+            backgroundColor: '{{#if isDegrading}}rgba(220, 53, 69, 0.1){{else}}{{#if isImproving}}rgba(40, 167, 69, 0.1){{else}}rgba(23, 162, 184, 0.1){{/if}}{{/if}}',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 6,
+            pointHoverRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Health Score Evolution: {{healthTrend}} ({{scoreChange}} points)'
+            },
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                min: 0,
+                max: 100,
+                title: { display: true, text: 'Health Score (0-100)' },
+                ticks: {
+                    callback: function(value) {
+                        if (value >= 90) return value + ' (EXCELLENT)';
+                        if (value >= 75) return value + ' (GOOD)';
+                        if (value >= 60) return value + ' (FAIR)';
+                        if (value >= 40) return value + ' (POOR)';
+                        return value + ' (CRITICAL)';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Category Evolution Chart
+new Chart(document.getElementById('categoryEvolutionChart'), {
+    type: 'line',
+    data: {
+        labels: [{{#each dumpLabels}}'Dump {{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [
+            {{#each categoryEvolutions}}
+            {
+                label: '{{name}}',
+                data: [{{#each scores}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+                borderColor: '{{#if isDegrading}}#dc3545{{else}}{{#if isImproving}}#28a745{{else}}#667eea{{/if}}{{/if}}',
+                backgroundColor: '{{#if isDegrading}}rgba(220, 53, 69, 0.05){{else}}{{#if isImproving}}rgba(40, 167, 69, 0.05){{else}}rgba(102, 126, 234, 0.05){{/if}}{{/if}}',
+                tension: 0.3,
+                fill: false
+            }{{#unless @last}},{{/unless}}
+            {{/each}}
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Category Health Scores Over Time'
+            },
+            legend: {
+                display: true,
+                position: 'bottom'
+            }
+        },
+        scales: {
+            y: {
+                min: 0,
+                max: 100,
+                title: { display: true, text: 'Score (0-100)' }
+            }
+        }
+    }
+});
+{{/if}}
+
+// Time Distribution Pie Chart
+new Chart(document.getElementById('timeDistPie'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Running (CPU)', 'Blocked (Locks)', 'Waiting', 'I/O', 'GC'],
+        datasets: [{
+            data: [{{runningPercent}}, {{blockedPercent}}, {{waitingPercent}}, {{ioPercent}}, {{gcPercent}}],
+            backgroundColor: ['#28a745', '#dc3545', '#ffc107', '#17a2b8', '#6c757d']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Thread Time Distribution' }
+        }
+    }
+});
+</script>
+{{> partials/footer}}

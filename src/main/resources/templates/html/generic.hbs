@@ -1,0 +1,57 @@
+{{> partials/header}}
+<header>
+    <div class="container">
+        <h1>{{analyzerName}}</h1>
+        <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+    </div>
+</header>
+<div class="container">
+    <div class="card">
+        <h2>Summary</h2>
+        <p style="font-size: 1.1rem; color: #666;">{{summary}}</p>
+    </div>
+
+    {{#if hasFindings}}
+    <div class="card">
+        <h2>Findings ({{findings.length}})</h2>
+        {{#each findingsBySeverity}}
+        <p><span class="severity-badge severity-{{lowercase @key}}">{{@key}}</span> {{this}} finding(s)</p>
+        {{/each}}
+
+        <ul class="findings-list" style="margin-top: 20px;">
+            {{#each formattedFindings}}
+            <li class="finding severity-{{lowercase severity}}">
+                <div class="finding-header">
+                    <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+                    <span style="color: #666;">[{{category}}]</span>
+                </div>
+                <div class="finding-message">{{message}}</div>
+                {{#if affectedThreads}}
+                <details style="margin-top: 12px;">
+                    <summary>Affected Threads ({{affectedThreads.length}}{{#if hasMoreThreads}}+{{/if}})</summary>
+                    <div style="padding: 12px;">
+                        {{#each affectedThreads}}
+                        <div style="padding: 8px; margin: 4px 0; background: #f8f9fa; border-radius: 4px;">
+                            <strong>{{name}}</strong>
+                            {{#if state}}<span class="thread-badge {{lowercase state}}">{{state}}</span>{{/if}}
+                            {{#if daemon}}<span class="thread-badge">daemon</span>{{/if}}
+                        </div>
+                        {{/each}}
+                        {{#if hasMoreThreads}}
+                        <p style="color: #666; font-style: italic;">... and {{moreThreadCount}} more threads</p>
+                        {{/if}}
+                    </div>
+                </details>
+                {{/if}}
+            </li>
+            {{/each}}
+        </ul>
+    </div>
+    {{else}}
+    <div class="card" style="background: #d4edda; border: 2px solid #28a745;">
+        <h2 style="color: #155724;">✓ No Issues Found</h2>
+        <p>The analysis completed without finding any notable issues.</p>
+    </div>
+    {{/if}}
+</div>
+{{> partials/footer}}

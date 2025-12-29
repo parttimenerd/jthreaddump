@@ -1,0 +1,300 @@
+{{> partials/header}}
+<header>
+    <div class="container">
+        <h1>Class Loading Analysis</h1>
+        <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+        {{#if isMultiDump}}<span class="severity-badge severity-info">Multi-Dump Temporal</span>{{/if}}
+    </div>
+</header>
+<div class="container">
+    {{#if hasData}}
+    <div class="card">
+        <h2>Summary</h2>
+        <div class="stat-grid">
+            <div class="stat-item">
+                <div class="stat-value" {{#if excessiveLoading}}style="color: var(--color-warning);"{{/if}}>{{totalClasses}}</div>
+                <div class="stat-label">Classes Loaded</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{formatDuration totalDurationMs}}</div>
+                <div class="stat-label">Total Load Time</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" {{#ifGt slowLoadCount 0}}style="color: var(--color-warning);"{{/ifGt}}>{{slowLoadCount}}</div>
+                <div class="stat-label">Slow Loads (>50ms)</div>
+            </div>
+        </div>
+    </div>
+
+    {{#if hasTemporal}}
+    <!-- Temporal Analysis -->
+    <div class="card">
+        <h2>Loading Rate Trend</h2>
+        {{#if loadingRateTrend.isWarmup}}
+        <div style="background: #d4edda; padding: 12px; border-radius: 4px; margin-bottom: 16px;">
+            <strong style="color: #155724;">✓ Warmup Pattern Detected</strong>
+            <p style="margin: 8px 0 0 0; color: #155724;">High initial loading rate decreased significantly - typical JVM warmup behavior.</p>
+        </div>
+        {{/if}}
+
+        <div class="stat-grid">
+            <div class="stat-item">
+                <div class="stat-value" style="color: {{#if loadingRateTrend.isIncreasing}}#dc3545{{else}}{{#if loadingRateTrend.isDecreasing}}#28a745{{else}}#17a2b8{{/if}}{{/if}};">
+                    {{#if loadingRateTrend.isIncreasing}}↑{{else}}{{#if loadingRateTrend.isDecreasing}}↓{{else}}→{{/if}}{{/if}}
+                </div>
+                <div class="stat-label">{{loadingRateTrend.direction}}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{loadingRateTrend.changeRate}}%</div>
+                <div class="stat-label">Change Rate</div>
+            </div>
+            {{#if durationTrend}}
+            <div class="stat-item">
+                <div class="stat-value" style="color: {{#if durationTrend.isIncreasing}}#ffc107{{else}}{{#if durationTrend.isDecreasing}}#28a745{{else}}#17a2b8{{/if}}{{/if}};">
+                    {{durationTrend.direction}}
+                </div>
+                <div class="stat-label">Duration Trend</div>
+            </div>
+            {{/if}}
+        </div>
+
+        <div class="chart-row" style="margin-top: 20px;">
+            <div class="chart-container">
+                <canvas id="loadingRateChart"></canvas>
+            </div>
+            {{#if durationTrend}}
+            <div class="chart-container">
+                <canvas id="durationTrendChart"></canvas>
+            </div>
+            {{/if}}
+        </div>
+    </div>
+
+    {{#if loaderEvolutions}}
+    <div class="card">
+        <h2>Class Loader Evolution</h2>
+        <table class="trend-table">
+            <thead>
+                <tr>
+                    <th>Class Loader</th>
+                    <th>Trend</th>
+                    <th>Change</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each loaderEvolutions}}
+                <tr>
+                    <td><code>{{name}}</code></td>
+                    <td>
+                        <div style="display: flex; gap: 2px;">
+                            {{#each counts}}
+                            <div style="flex: 1; height: 30px; background: linear-gradient(to top, #667eea {{this}}%, #e9ecef {{this}}%); border-radius: 2px;" title="{{this}} classes"></div>
+                            {{/each}}
+                        </div>
+                    </td>
+                    <td>
+                        <strong style="color: {{#if isIncreasing}}#dc3545{{else}}#28a745{{/if}};">
+                            {{#if isIncreasing}}+{{/if}}{{change}}
+                        </strong>
+                    </td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+    {{/if}}
+    {{/if}}
+
+    {{#if excessiveLoading}}
+    <div class="card" style="background: #fff3cd; border: 2px solid #ffc107;">
+        <h2 style="color: #856404;">⚠ Excessive Class Loading</h2>
+        <p>A large number of classes are being loaded, which may indicate dynamic class generation or a warm-up phase.</p>
+    </div>
+    {{/if}}
+
+    {{#if slowLoading}}
+    <div class="card" style="background: #fff3cd; border: 2px solid #ffc107;">
+        <h2 style="color: #856404;">⚠ Slow Class Loading</h2>
+        <p>Some classes are taking a long time to load, which may indicate classpath issues or slow I/O.</p>
+    </div>
+    {{/if}}
+
+    {{#if byClassLoader}}
+    <div class="card">
+        <h2>Classes by Loader</h2>
+        <div class="chart-row">
+            <div class="chart-container">
+                <canvas id="loaderPie"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="loaderBar"></canvas>
+            </div>
+        </div>
+    </div>
+    {{/if}}
+
+    {{#if classLoadEvents}}
+    <div class="card">
+        <h2>Class Load Events</h2>
+        <table class="trend-table">
+            <thead><tr><th>Class</th><th>Loader</th><th>Thread</th><th>Duration</th></tr></thead>
+            <tbody>
+                {{#each classLoadEvents}}
+                <tr {{#if isSlow}}style="background: #fff3cd;"{{/if}}>
+                    <td><code title="{{fullClassName}}">{{className}}</code></td>
+                    <td>{{classLoader}}</td>
+                    <td>{{threadName}}</td>
+                    <td>{{formatDuration durationMs}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+        {{#if hasMoreEvents}}
+        <p style="color: #666; font-style: italic;">... and {{moreEventCount}} more events</p>
+        {{/if}}
+    </div>
+    {{/if}}
+
+    {{#unless hasIssues}}
+    <div class="card" style="background: #d4edda; border: 2px solid #28a745;">
+        <h2 style="color: #155724;">✓ Class Loading Normal</h2>
+        <p>Class loading activity appears normal.</p>
+    </div>
+    {{/unless}}
+    {{else}}
+    <div class="card" style="background: #e9ecef;">
+        <h2>No Class Loading Data</h2>
+        <p>No class loading events found. This analysis requires JFR data with class loading events enabled.</p>
+    </div>
+    {{/if}}
+
+    {{#if hasFindings}}
+    <div class="card">
+        <h2>Findings</h2>
+        <ul class="findings-list">
+            {{#each findings}}
+            <li class="finding severity-{{lowercase severity}}">
+                <div class="finding-header">
+                    <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+                </div>
+                <div class="finding-message">{{message}}</div>
+            </li>
+            {{/each}}
+        </ul>
+    </div>
+    {{/if}}
+</div>
+
+{{#if hasTemporal}}
+<script>
+// Loading Rate Chart
+new Chart(document.getElementById('loadingRateChart'), {
+    type: 'line',
+    data: {
+        labels: [{{#each dumpLabels}}'Dump {{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            label: 'Classes Loaded',
+            data: [{{#each classesPerDump}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+            borderColor: '{{#if loadingRateTrend.isIncreasing}}#dc3545{{else}}{{#if loadingRateTrend.isDecreasing}}#28a745{{else}}#667eea{{/if}}{{/if}}',
+            backgroundColor: '{{#if loadingRateTrend.isIncreasing}}rgba(220, 53, 69, 0.1){{else}}{{#if loadingRateTrend.isDecreasing}}rgba(40, 167, 69, 0.1){{else}}rgba(102, 126, 234, 0.1){{/if}}{{/if}}',
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Loading Rate: {{loadingRateTrend.direction}} ({{loadingRateTrend.changeRate}}%)'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: { display: true, text: 'Classes Loaded' }
+            }
+        }
+    }
+});
+
+{{#if durationTrend}}
+// Duration Trend Chart
+new Chart(document.getElementById('durationTrendChart'), {
+    type: 'line',
+    data: {
+        labels: [{{#each dumpLabels}}'Dump {{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            label: 'Load Duration (ms)',
+            data: [{{#each durationPerDump}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+            borderColor: '{{#if durationTrend.isIncreasing}}#ffc107{{else}}{{#if durationTrend.isDecreasing}}#28a745{{else}}#764ba2{{/if}}{{/if}}',
+            backgroundColor: '{{#if durationTrend.isIncreasing}}rgba(255, 193, 7, 0.1){{else}}{{#if durationTrend.isDecreasing}}rgba(40, 167, 69, 0.1){{else}}rgba(118, 75, 162, 0.1){{/if}}{{/if}}',
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Duration Trend: {{durationTrend.direction}} ({{durationTrend.changeRate}}%)'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: { display: true, text: 'Duration (ms)' }
+            }
+        }
+    }
+});
+{{/if}}
+</script>
+{{/if}}
+
+{{#if byClassLoader}}
+<script>
+// Class Loader Pie Chart
+new Chart(document.getElementById('loaderPie'), {
+    type: 'doughnut',
+    data: {
+        labels: [{{#each loaderNames}}'{{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            data: [{{#each loaderCounts}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+            backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'right' },
+            title: { display: true, text: 'Classes by Loader' }
+        }
+    }
+});
+
+// Class Loader Bar Chart
+new Chart(document.getElementById('loaderBar'), {
+    type: 'bar',
+    data: {
+        labels: [{{#each loaderNames}}'{{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            label: 'Class Count',
+            data: [{{#each loaderCounts}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+            backgroundColor: '#667eea'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { title: { display: true, text: 'Classes per Loader' } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+</script>
+{{/if}}
+{{> partials/footer}}

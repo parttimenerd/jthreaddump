@@ -1,0 +1,188 @@
+{{> partials/header}}
+<header>
+    <div class="container">
+        <h1>Thread Churn Analysis</h1>
+        <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+        {{#if isMultiDump}}<span class="severity-badge severity-info">{{dumpCount}} Dumps</span>{{/if}}
+    </div>
+</header>
+<div class="container">
+    <div class="card">
+        <h2>Summary</h2>
+        <div class="stat-grid">
+            <div class="stat-item">
+                <div class="stat-value">{{firstCount}}</div>
+                <div class="stat-label">First Dump</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{lastCount}}</div>
+                <div class="stat-label">Last Dump</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value {{trendClass}}">{{trendDisplay}}</div>
+                <div class="stat-label">Net Change</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" style="color: var(--color-ok);">+{{totalCreated}}</div>
+                <div class="stat-label">Created</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" style="color: var(--color-error);">-{{totalDestroyed}}</div>
+                <div class="stat-label">Destroyed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{churnRate}}x</div>
+                <div class="stat-label">Churn Rate</div>
+            </div>
+        </div>
+    </div>
+
+    {{#if potentialLeak}}
+    <div class="card" style="background: #f8d7da; border: 2px solid #dc3545;">
+        <h2 style="color: #721c24;">⚠ Potential Thread Leak</h2>
+        <p>Thread count has grown consistently from {{firstCount}} to {{lastCount}} (+{{netGrowth}}). This may indicate threads are being created but not properly terminated.</p>
+    </div>
+    {{/if}}
+
+    {{#if highChurn}}
+    <div class="card" style="background: #fff3cd; border: 2px solid #ffc107;">
+        <h2 style="color: #856404;">⚠ High Thread Churn</h2>
+        <p>{{totalCreated}} threads created and {{totalDestroyed}} destroyed. High churn may impact performance due to thread creation overhead.</p>
+    </div>
+    {{/if}}
+
+    {{#if isMultiDump}}
+    <!-- Charts Section -->
+    <div class="card">
+        <h2>Thread Count Over Time</h2>
+        <div class="chart-container" style="height: 300px;">
+            <canvas id="threadCountLine"></canvas>
+        </div>
+    </div>
+
+    {{#if hasChurnEvents}}
+    <div class="card">
+        <h2>Thread Creation vs Destruction</h2>
+        <div class="chart-container" style="height: 300px;">
+            <canvas id="churnStackedBar"></canvas>
+        </div>
+    </div>
+    {{/if}}
+
+    <div class="card">
+        <h2>Churn Events</h2>
+        <table class="trend-table">
+            <thead>
+                <tr>
+                    <th>Interval</th>
+                    <th>Created</th>
+                    <th>Destroyed</th>
+                    <th>Net Change</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each churnEvents}}
+                <tr>
+                    <td>Dump {{fromDump}} → {{toDump}}</td>
+                    <td style="color: var(--color-ok);">+{{created}}</td>
+                    <td style="color: var(--color-error);">-{{destroyed}}</td>
+                    <td class="{{#if isGrowth}}change-up{{else}}{{#if isShrink}}change-down{{else}}change-same{{/if}}{{/if}}">
+                        {{#if isGrowth}}+{{/if}}{{netChange}}
+                    </td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+    {{/if}}
+
+    {{#unless hasIssues}}
+    <div class="card" style="background: #d4edda; border: 2px solid #28a745;">
+        <h2 style="color: #155724;">✓ Thread Count Stable</h2>
+        <p>No significant thread churn or growth detected.</p>
+    </div>
+    {{/unless}}
+
+    {{#if hasFindings}}
+    <div class="card">
+        <h2>Findings</h2>
+        <ul class="findings-list">
+            {{#each findings}}
+            <li class="finding severity-{{lowercase severity}}">
+                <div class="finding-header">
+                    <span class="severity-badge severity-{{lowercase severity}}">{{severity}}</span>
+                </div>
+                <div class="finding-message">{{message}}</div>
+            </li>
+            {{/each}}
+        </ul>
+    </div>
+    {{/if}}
+</div>
+
+{{#if isMultiDump}}
+<script>
+// Thread Count Line Chart
+new Chart(document.getElementById('threadCountLine'), {
+    type: 'line',
+    data: {
+        labels: [{{#each dumpLabels}}'Dump {{this}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [{
+            label: 'Thread Count',
+            data: [{{#each threadCountData}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: { display: true, text: 'Thread Count Evolution' },
+            annotation: {
+                annotations: {
+                    trendLine: {
+                        type: 'line',
+                        borderColor: '{{#if potentialLeak}}#dc3545{{else}}#28a745{{/if}}',
+                        borderDash: [5, 5],
+                        borderWidth: 2
+                    }
+                }
+            }
+        },
+        scales: { y: { beginAtZero: false } }
+    }
+});
+
+{{#if hasChurnEvents}}
+// Churn Stacked Bar Chart
+new Chart(document.getElementById('churnStackedBar'), {
+    type: 'bar',
+    data: {
+        labels: [{{#each churnEvents}}'{{fromDump}}→{{toDump}}'{{#unless @last}}, {{/unless}}{{/each}}],
+        datasets: [
+            {
+                label: 'Created',
+                data: [{{#each createdData}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+                backgroundColor: '#28a745'
+            },
+            {
+                label: 'Destroyed',
+                data: [{{#each destroyedData}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}],
+                backgroundColor: '#dc3545'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { title: { display: true, text: 'Thread Creation vs Destruction' } },
+        scales: { x: { stacked: false }, y: { beginAtZero: true } }
+    }
+});
+{{/if}}
+</script>
+{{/if}}
+{{> partials/footer}}

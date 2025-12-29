@@ -1,0 +1,98 @@
+{{!-- Class Loading analysis result template --}}
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}
+{{#bold "                          CLASS LOADING ANALYSIS" color=colorEnabled}}{{/bold}}
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}
+
+Severity: {{#severityColor severity color=colorEnabled}}{{severity}}{{/severityColor}}
+{{#if isMultiDump}}Analysis Type: Multi-Dump Temporal{{/if}}
+
+{{#if hasData}}
+{{!-- Summary --}}
+{{#bold "Summary:" color=colorEnabled}}{{/bold}}
+  Classes Loaded:     {{#ifGt totalClasses 100}}{{#warning totalClasses color=colorEnabled}}{{/warning}}{{else}}{{totalClasses}}{{/ifGt}}
+  Total Load Time:    {{formatDuration totalDurationMs}}
+  Slow Loads (>50ms): {{#ifGt slowLoadCount 0}}{{#warning slowLoadCount color=colorEnabled}}{{/warning}}{{else}}{{slowLoadCount}}{{/ifGt}}
+
+{{#if hasTemporal}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "LOADING RATE TREND:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#if loadingRateTrend.isWarmup}}
+{{#success "✓ WARMUP PATTERN DETECTED" color=colorEnabled}}{{/success}}
+High initial loading rate decreased significantly - typical JVM warmup behavior.
+
+{{/if}}
+Trend: {{#if loadingRateTrend.isIncreasing}}{{#warning loadingRateTrend.direction color=colorEnabled}}{{/warning}} {{#error "↑" color=colorEnabled}}{{/error}}{{else}}{{#if loadingRateTrend.isDecreasing}}{{#success loadingRateTrend.direction color=colorEnabled}}{{/success}} {{#success "↓" color=colorEnabled}}{{/success}}{{else}}{{loadingRateTrend.direction}} →{{/if}}{{/if}} ({{loadingRateTrend.changeRate}}%)
+
+Per-Dump Classes:
+{{#each classesPerDump}}
+  Dump {{addOne @index}}: {{this}} classes
+{{/each}}
+
+{{#if durationTrend}}
+Duration Trend: {{#if durationTrend.isIncreasing}}{{#warning durationTrend.direction color=colorEnabled}}{{/warning}} {{#error "↑" color=colorEnabled}}{{/error}}{{else}}{{#if durationTrend.isDecreasing}}{{#success durationTrend.direction color=colorEnabled}}{{/success}} {{#success "↓" color=colorEnabled}}{{/success}}{{else}}{{durationTrend.direction}} →{{/if}}{{/if}} ({{durationTrend.changeRate}}%)
+{{/if}}
+
+{{#if loaderEvolutions}}
+{{#bold "Class Loader Evolution:" color=colorEnabled}}{{/bold}}
+{{#each loaderEvolutions}}
+  {{name}}: {{#if isIncreasing}}{{#warning change color=../colorEnabled}}{{/warning}} ↑{{else}}{{change}} ↓{{/if}}
+{{/each}}
+{{/if}}
+
+{{/if}}
+
+{{#if excessiveLoading}}
+{{#warning "⚠ EXCESSIVE CLASS LOADING DETECTED" color=colorEnabled}}{{/warning}}
+{{/if}}
+
+{{#if slowLoading}}
+{{#warning "⚠ SLOW CLASS LOADING DETECTED" color=colorEnabled}}{{/warning}}
+{{/if}}
+
+{{#if byClassLoader}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "By Class Loader:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each byClassLoader}}
+  {{pad name width=30}}: {{count}} classes
+{{/each}}
+{{/if}}
+
+{{#if classLoadEvents}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Recent Class Loads:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each classLoadEvents}}
+  {{#if isSlow}}{{#warning durationMs color=../colorEnabled}}{{/warning}}ms{{else}}{{durationMs}}ms{{/if}} - {{className}} ({{classLoader}})
+{{/each}}
+{{#if hasMoreEvents}}
+  ... and {{moreEventCount}} more
+{{/if}}
+{{/if}}
+
+{{else}}
+{{#dim "No class loading data available (requires JFR)" color=colorEnabled}}{{/dim}}
+{{/if}}
+
+{{!-- Findings --}}
+{{#if hasFindings}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Findings:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each findings}}
+{{#severityColor severity color=../colorEnabled}}[{{severity}}]{{/severityColor}} {{message}}
+{{/each}}
+{{/if}}
+
+{{#unless hasIssues}}
+{{#if hasData}}
+{{#success "✓ Class loading activity normal" color=colorEnabled}}{{/success}}
+{{/if}}
+{{/unless}}
+
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}

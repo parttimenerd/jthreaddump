@@ -1,0 +1,5 @@
+Scenario: class-loading
+Duration: PT10S
+Dump Interval: PT2S
+Dumps Captured: 5
+Timestamp: 2025-12-22T15:18:54.428166Z

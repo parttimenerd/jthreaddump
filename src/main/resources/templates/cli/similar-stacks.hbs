@@ -1,0 +1,81 @@
+{{!-- Similar Stack analysis result template --}}
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}
+{{#bold "                          SIMILAR STACK ANALYSIS" color=colorEnabled}}{{/bold}}
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}
+
+Severity: {{#severityColor severity color=colorEnabled}}{{severity}}{{/severityColor}}
+{{#if isMultiDump}}Dumps Analyzed: Multi-dump{{/if}}
+
+{{!-- Summary --}}
+{{#bold "Summary:" color=colorEnabled}}{{/bold}}
+  Similar Groups:     {{groupCount}}
+  Total Threads:      {{totalGroupedThreads}}
+  Prefix Depth:       {{prefixDepth}} frames
+
+{{#if hasEvolution}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Pattern Evolution Summary:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+Growing Patterns:    {{#ifGt growingPatternCount 0}}{{#warning growingPatternCount color=colorEnabled}}{{/warning}}{{else}}{{growingPatternCount}}{{/ifGt}}
+Shrinking Patterns:  {{shrinkingPatternCount}}
+Thread Migration:    {{#ifGt migratingPatternCount 0}}{{#warning migratingPatternCount color=colorEnabled}}{{/warning}}{{else}}{{migratingPatternCount}}{{/ifGt}}
+
+{{#bold "Evolution Details:" color=colorEnabled}}{{/bold}}
+{{#each evolvingPatterns}}
+{{#if isGrowing}}{{#warning "↑ GROWING" color=../colorEnabled}}{{/warning}}{{else}}{{#if isShrinking}}{{#success "↓ SHRINKING" color=../colorEnabled}}{{/success}}{{else}}{{#if hasMigration}}{{#cyan "⟷ MIGRATING" color=../colorEnabled}}{{/cyan}}{{else}}{{dim "→ STABLE" color=../colorEnabled}}{{/if}}{{/if}}{{/if}} {{entryPoint}}
+  Size: {{firstSize}} → {{lastSize}} ({{sizeChangeDisplay}}{{#if growthRate}}, {{growthRate}}%{{/if}})
+  Stability: {{stabilityScore}}% | Dumps: {{firstDump}} → {{lastDump}} ({{occurrences}} occurrence{{#ifGt occurrences 1}}s{{/ifGt}})
+{{/each}}
+
+{{/if}}
+
+{{#if hasGroups}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Entry Point Groups:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each groups}}
+{{#cyan "Group #" color=../colorEnabled}}{{/cyan}}{{index}}: {{entryPoint}} ({{threadCount}} threads, {{uniqueStackCount}} unique stacks)
+  Entry Point Path:
+{{#each prefixFrames}}
+    at {{this}}
+{{/each}}
+  Threads: {{#each displayedThreadNames}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}{{#if hasMoreThreads}} +{{moreThreadCount}} more{{/if}}
+
+{{/each}}
+{{#if hasMoreGroups}}
+... and {{moreGroupCount}} more groups
+{{/if}}
+{{else}}
+{{#dim "No similar stack groups found" color=colorEnabled}}{{/dim}}
+{{/if}}
+
+{{#if hasJfrData}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "JFR CPU Profiling:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#bold "Hottest Methods:" color=colorEnabled}}{{/bold}}
+{{#each jfrAnalysis.hottestMethods}}
+  {{percentage}}% - {{name}} ({{sampleCount}} samples)
+{{/each}}
+
+{{#bold "Hottest Threads:" color=colorEnabled}}{{/bold}}
+{{#each jfrAnalysis.hottestThreads}}
+  {{percentage}}% - {{name}} ({{sampleCount}} samples)
+{{/each}}
+{{/if}}
+
+{{!-- Findings --}}
+{{#if hasFindings}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Findings:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each findings}}
+{{#severityColor severity color=../colorEnabled}}[{{severity}}]{{/severityColor}} {{message}}
+{{/each}}
+{{/if}}
+
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}

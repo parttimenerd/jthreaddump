@@ -1,0 +1,90 @@
+{{!-- JFR Profiling analysis result template --}}
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}
+{{#bold "                            JFR PROFILING ANALYSIS" color=colorEnabled}}{{/bold}}
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}
+
+Severity: {{#severityColor severity color=colorEnabled}}{{severity}}{{/severityColor}}
+{{#if isMultiDump}}Analysis Type: Multi-Dump Temporal Profiling{{/if}}
+
+{{#if hasData}}
+{{!-- Summary --}}
+{{#bold "Summary:" color=colorEnabled}}{{/bold}}
+  Total Samples:      {{totalSamples}}
+  Unique Methods:     {{totalMethods}}
+  Unique Threads:     {{totalThreads}}
+  Allocation Sites:   {{totalAllocations}}
+  I/O Targets:        {{totalIOTargets}}
+
+{{#if hasTemporal}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "TEMPORAL PROFILING - METHOD EVOLUTION:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each methodEvolutions}}
+{{#if isEmerging}}{{#error "⚠ EMERGING" color=../colorEnabled}}{{/error}}{{else}}{{#if isIncreasing}}{{#warning "↑ INCREASING" color=../colorEnabled}}{{/warning}}{{else}}{{#if isDecreasing}}{{#success "↓ DECREASING" color=../colorEnabled}}{{/success}}{{else}}{{#cyan "→ STABLE" color=../colorEnabled}}{{/cyan}}{{/if}}{{/if}}{{/if}} {{method}}
+  CPU: {{firstPct}}% → {{lastPct}}% ({{change}}%, {{changePercent}}% change)
+  Timeline: {{#each cpuHistory}}{{this}}%{{#unless @last}} → {{/unless}}{{/each}}
+{{/each}}
+
+{{#if allocationTrend}}
+{{#bold "Allocation Trend:" color=colorEnabled}}{{/bold}} {{#if allocationTrend.isIncreasing}}{{#warning allocationTrend.direction color=colorEnabled}}{{/warning}} {{#error "↑" color=colorEnabled}}{{/error}}{{else}}{{#if allocationTrend.isDecreasing}}{{#success allocationTrend.direction color=colorEnabled}}{{/success}} {{#success "↓" color=colorEnabled}}{{/success}}{{else}}{{allocationTrend.direction}}{{/if}}{{/if}} ({{allocationTrend.changeRate}}%)
+{{/if}}
+
+{{#if ioTrend}}
+{{#bold "I/O Trend:" color=colorEnabled}}{{/bold}} {{#if ioTrend.isIncreasing}}{{#warning ioTrend.direction color=colorEnabled}}{{/warning}} {{#error "↑" color=colorEnabled}}{{/error}}{{else}}{{#if ioTrend.isDecreasing}}{{#success ioTrend.direction color=colorEnabled}}{{/success}} {{#success "↓" color=colorEnabled}}{{/success}}{{else}}{{ioTrend.direction}}{{/if}}{{/if}} ({{ioTrend.changeRate}}%)
+{{/if}}
+
+{{/if}}
+
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Hottest Methods (CPU):" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each hottestMethods}}
+  {{#ifGte percentage 20}}{{#error percentage color=../colorEnabled}}{{/error}}{{else}}{{#ifGte percentage 10}}{{#warning percentage color=../colorEnabled}}{{/warning}}{{else}}{{percentage}}{{/ifGte}}{{/ifGte}}% - {{name}} ({{sampleCount}} samples)
+{{/each}}
+
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Hottest Threads:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each hottestThreads}}
+  {{percentage}}% - {{name}} ({{sampleCount}} samples)
+{{/each}}
+
+{{#if hasAllocations}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Allocation Hotspots:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each allocationHotspots}}
+  {{size}} - {{site}} ({{count}} allocations)
+{{/each}}
+{{/if}}
+
+{{#if hasIO}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "I/O Hotspots:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each ioHotspots}}
+  {{durationMs}}ms - {{target}} ({{size}})
+{{/each}}
+{{/if}}
+
+{{else}}
+{{#dim "No JFR profiling data available" color=colorEnabled}}{{/dim}}
+{{/if}}
+
+{{!-- Findings --}}
+{{#if hasFindings}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+{{#bold "Findings:" color=colorEnabled}}{{/bold}}
+{{#bold "───────────────────────────────────────────────────────────────────────────────" color=colorEnabled}}{{/bold}}
+
+{{#each findings}}
+{{#severityColor severity color=../colorEnabled}}[{{severity}}]{{/severityColor}} {{message}}
+{{/each}}
+{{/if}}
+
+{{#bold "═══════════════════════════════════════════════════════════════════════════════" color=colorEnabled}}{{/bold}}

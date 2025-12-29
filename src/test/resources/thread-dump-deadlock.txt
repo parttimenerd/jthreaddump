@@ -1,0 +1,13 @@
+"Thread-A" #1 prio=5 tid=0x1000 nid=0x1000 waiting for monitor entry
+   java.lang.Thread.State: BLOCKED (on object monitor)
+	at com.example.DeadlockExample.methodA(DeadlockExample.java:20)
+	- waiting to lock <0x00000007ffc11111> (a java.lang.Object)
+	- locked <0x00000007ffc22222> (a java.lang.Object)
+	at com.example.DeadlockExample.run(DeadlockExample.java:10)
+
+"Thread-B" #2 prio=5 tid=0x2000 nid=0x2000 waiting for monitor entry
+   java.lang.Thread.State: BLOCKED (on object monitor)
+	at com.example.DeadlockExample.methodB(DeadlockExample.java:30)
+	- waiting to lock <0x00000007ffc22222> (a java.lang.Object)
+	- locked <0x00000007ffc11111> (a java.lang.Object)
+	at com.example.DeadlockExample.run(DeadlockExample.java:15)

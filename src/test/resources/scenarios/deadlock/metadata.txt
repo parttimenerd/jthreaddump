@@ -1,0 +1,5 @@
+Scenario: deadlock
+Duration: PT10S
+Dump Interval: PT2S
+Dumps Captured: 6
+Timestamp: 2025-12-22T15:19:03.564573Z

@@ -1,0 +1,24 @@
+{{!-- Generic analysis result template --}}
+{{#bold analyzerName color=colorEnabled}}{{/bold}}
+{{#severityColor severity color=colorEnabled}}{{/severityColor}}
+
+{{#if hasFindings}}
+Summary: {{summary}}
+
+Findings ({{findings.length}}):
+{{#each formattedFindings}}
+  {{#severityColor severity color=../colorEnabled}}[{{severity}}]{{/severityColor}} [{{category}}] {{message}}
+{{#if affectedThreads}}
+    Affected threads:
+{{#each affectedThreads}}
+      - {{name}} ({{#threadStateColor state color=../../colorEnabled}}{{/threadStateColor}})
+{{/each}}
+{{#if hasMoreThreads}}
+      ... and {{moreThreadCount}} more
+{{/if}}
+{{/if}}
+{{/each}}
+{{else}}
+{{summary}}
+No findings.
+{{/if}}

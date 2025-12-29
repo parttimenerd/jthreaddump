@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    # Run every 25 days to ensure fresh artifacts
+    - cron: '0 0 */25 * *'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [21, 25]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'sapmachine'
+          cache: maven
+
+      - name: Build package
+        run: mvn package -DskipTests
+
+      - name: Generate config schema
+        if: matrix.java-version == 21
+        run: java -jar target/jstall.jar generate-schema config-schema.json
+
+      - name: Verify schema was generated
+        if: matrix.java-version == 21
+        run: |
+          if [ ! -f config-schema.json ]; then
+            echo "ERROR: config-schema.json was not generated!"
+            exit 1
+          fi
+          echo "Schema generated successfully"
+
+      - name: Upload schema artifact
+        if: matrix.java-version == 21
+        uses: actions/upload-artifact@v4
+        with:
+          name: config-schema
+          path: config-schema.json
+          retention-days: 30
+
+      - name: Upload JAR artifact
+        if: matrix.java-version == 21
+        uses: actions/upload-artifact@v4
+        with:
+          name: jstall-jar
+          path: target/jstall.jar
+          retention-days: 30
+
+      - name: Run tests
+        run: mvn clean test
