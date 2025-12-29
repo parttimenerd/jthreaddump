@@ -196,11 +196,11 @@ public class Main implements Callable<Integer> {
             System.out.println("  State: " + thread.state());
         }
 
-        if (thread.cpuTimeMs() != null) {
-            System.out.println("  CPU time: " + thread.cpuTimeMs() + "ms");
+        if (thread.cpuTimeSec() != null) {
+            System.out.printf("  CPU time: %.2fs%n", thread.cpuTimeSec());
         }
-        if (thread.elapsedTimeMs() != null) {
-            System.out.println("  Elapsed: " + thread.elapsedTimeMs() + "ms");
+        if (thread.elapsedTimeSec() != null) {
+            System.out.printf("  Elapsed: %.2fs%n", thread.elapsedTimeSec());
         }
 
         if (!thread.locks().isEmpty()) {

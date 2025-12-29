@@ -127,7 +127,7 @@ The parser extracts:
 - **Locks**: monitors held/waiting, object addresses, lock types
 - **JNI References**: global/weak ref counts and memory
 - **Deadlocks**: detected cycles with involved threads
-- **Timing**: CPU time, elapsed time (when available)
+- **Timing**: CPU time, elapsed time
 - **JVM Info**: version, runtime details
 
 All data exposed as immutable Java records.
@@ -140,8 +140,19 @@ All data exposed as immutable Java records.
 ThreadDump dump = ThreadDumpParser.parse(dumpText);
 
 dump.threads().stream()
-    .filter(t -> "BLOCKED".equals(t.state()))
+    .filter(t -> t.state() == Thread.State.BLOCKED)
     .forEach(t -> System.out.println(t.name() + " is blocked"));
+```
+
+### Example 2: Find threads consuming most CPU time
+
+```java
+dump.threads().stream()
+    .filter(t -> t.cpuTimeSec() != null)
+    .sorted((a, b) -> Double.compare(b.cpuTimeSec(), a.cpuTimeSec()))
+    .limit(10)
+    .forEach(t -> System.out.printf("%s: %.2f seconds CPU%n", 
+        t.name(), t.cpuTimeSec()));
 ```
 
 ### Example 3: Compare thread counts
@@ -152,26 +163,18 @@ import me.bechberger.jthreaddump.parser.ThreadDumpParser;
 ThreadDump dump1 = ThreadDumpParser.parse(Files.readString(Path.of("dump1.txt")));
 ThreadDump dump2 = ThreadDumpParser.parse(Files.readString(Path.of("dump2.txt")));
 
-System.out.
-
-println("Thread delta: "+
-                (dump2.threads().
-
-size() -dump1.
-
-threads().
-
-size()));
+System.out.println("Thread delta: " +
+                (dump2.threads().size() - dump1.threads().size()));
 ```
 
 ### Example 4: Find long-running threads
 
 ```java
 dump.threads().stream()
-    .filter(t -> t.elapsedTimeMs() != null)
-    .filter(t -> t.elapsedTimeMs() > 60000) // > 1 minute
-    .forEach(t -> System.out.printf("%s: %.1f seconds%n", 
-        t.name(), t.elapsedTimeMs() / 1000.0));
+    .filter(t -> t.elapsedTimeSec() != null)
+    .filter(t -> t.elapsedTimeSec() > 60.0) // > 1 minute
+    .forEach(t -> System.out.printf("%s: %.2f seconds%n", 
+        t.name(), t.elapsedTimeSec()));
 ```
 
 ## CLI Usage

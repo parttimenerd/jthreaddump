@@ -14,8 +14,8 @@ public record ThreadInfo(
         Integer priority,
         Boolean daemon,
         Thread.State state,
-        Long cpuTimeMs,
-        Long elapsedTimeMs,
+        Double cpuTimeSec,
+        Double elapsedTimeSec,
         List<StackFrame> stackTrace,
         List<LockInfo> locks,
         String waitingOnLock,
@@ -40,8 +40,8 @@ public record ThreadInfo(
                java.util.Objects.equals(priority, other.priority) &&
                java.util.Objects.equals(daemon, other.daemon) &&
                java.util.Objects.equals(state, other.state) &&
-               java.util.Objects.equals(cpuTimeMs, other.cpuTimeMs) &&
-               java.util.Objects.equals(elapsedTimeMs, other.elapsedTimeMs) &&
+               java.util.Objects.equals(cpuTimeSec, other.cpuTimeSec) &&
+               java.util.Objects.equals(elapsedTimeSec, other.elapsedTimeSec) &&
                java.util.Objects.equals(stackTrace, other.stackTrace) &&
                locksEqualsIgnoringHexValues(locks, other.locks) &&
                // Intentionally ignore waitingOnLock (hex value)

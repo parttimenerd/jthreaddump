@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  * Lenient parser for thread dumps from jstack and jcmd output.
  * Designed to be robust and extract as much information as possible.
  */
-public class ThreadDumpParser {
+public final class ThreadDumpParser {
 
     // Thread header patterns
     private static final Pattern THREAD_HEADER_PATTERN = Pattern.compile(
@@ -84,10 +84,14 @@ public class ThreadDumpParser {
     private static final Pattern DEADLOCK_STACK_SECTION_PATTERN = Pattern.compile(
             "Java stack information for the threads listed above:");
 
+    private ThreadDumpParser() {
+        // Prevent instantiation
+    }
+
     /**
      * Parse a thread dump from a string
      */
-    public ThreadDump parse(String content) throws IOException {
+    public static ThreadDump parse(String content) throws IOException {
         BufferedReader reader = new BufferedReader(new StringReader(content));
 
         Instant timestamp = Instant.now(); // Default to now, override if found
@@ -219,7 +223,7 @@ public class ThreadDumpParser {
         return new ThreadDump(timestamp, jvmInfo, threads, jniInfo, sourceType, deadlockInfos);
     }
 
-    private String detectSourceType(String content) {
+    private static String detectSourceType(String content) {
         // jcmd has explicit "jcmd" in header
         if (content.contains("jcmd") || content.contains("Thread.print")) {
             return "jcmd";
@@ -234,7 +238,7 @@ public class ThreadDumpParser {
     /**
      * Check if a line could be thread-related info (state, stack frame, lock)
      */
-    private boolean couldBeThreadInfo(String line) {
+    private static boolean couldBeThreadInfo(String line) {
         return line.contains("java.lang.Thread.State:") ||
                line.startsWith("at ") ||
                line.contains("- waiting on") ||
@@ -246,7 +250,7 @@ public class ThreadDumpParser {
     /**
      * Merge pending info into current thread builder
      */
-    private void mergePendingInfo(ThreadInfoBuilder current, ThreadInfoBuilder pending) {
+    private static void mergePendingInfo(ThreadInfoBuilder current, ThreadInfoBuilder pending) {
         if (pending.state != null && current.state == null) {
             current.state = pending.state;
         }
@@ -275,7 +279,7 @@ public class ThreadDumpParser {
     }
 
     @NotNull
-    private ThreadInfoBuilder parseThreadHeader(String line) {
+    private static ThreadInfoBuilder parseThreadHeader(String line) {
         ThreadInfoBuilder builder = new ThreadInfoBuilder();
 
         Matcher headerMatcher = THREAD_HEADER_PATTERN.matcher(line);
@@ -308,19 +312,19 @@ public class ThreadDumpParser {
         // Extract CPU time
         Matcher cpuMatcher = CPU_TIME_PATTERN.matcher(line);
         if (cpuMatcher.matches()) {
-            builder.cpuTimeMs = parseTimeToMs(cpuMatcher.group(1), cpuMatcher.group(2));
+            builder.cpuTimeSec = parseTimeToSeconds(cpuMatcher.group(1), cpuMatcher.group(2));
         }
 
         // Extract elapsed time
         Matcher elapsedMatcher = ELAPSED_TIME_PATTERN.matcher(line);
         if (elapsedMatcher.matches()) {
-            builder.elapsedTimeMs = parseTimeToMs(elapsedMatcher.group(1), elapsedMatcher.group(2));
+            builder.elapsedTimeSec = parseTimeToSeconds(elapsedMatcher.group(1), elapsedMatcher.group(2));
         }
 
         return builder;
     }
 
-    private void parseThreadLine(String line, ThreadInfoBuilder builder) {
+    private static void parseThreadLine(String line, ThreadInfoBuilder builder) {
         // Parse thread state
         Matcher stateMatcher = THREAD_STATE_PATTERN.matcher(line);
         if (stateMatcher.matches()) {
@@ -387,7 +391,7 @@ public class ThreadDumpParser {
         }
     }
 
-    private StackFrame parseStackFrame(String method, String location) {
+    private static StackFrame parseStackFrame(String method, String location) {
         // Parse method: "className.methodName"
         int lastDot = method.lastIndexOf('.');
         String className = lastDot > 0 ? method.substring(0, lastDot) : method;
@@ -421,7 +425,7 @@ public class ThreadDumpParser {
         return new StackFrame(className, methodName, fileName, lineNumber, isNativeMethod ? true : null);
     }
 
-    private Thread.State parseThreadState(String state) {
+    private static Thread.State parseThreadState(String state) {
         try {
             return Thread.State.valueOf(state);
         } catch (IllegalArgumentException e) {
@@ -430,15 +434,15 @@ public class ThreadDumpParser {
         }
     }
 
-    private Long parseTimeToMs(String value, String unit) {
+    private static Double parseTimeToSeconds(String value, String unit) {
         try {
             double time = Double.parseDouble(value);
             return switch (unit) {
-                case "s", "" -> (long) (time * 1000);
-                case "ms" -> (long) time;
-                case "us" -> (long) (time / 1000);
-                case "ns" -> (long) (time / 1_000_000);
-                default -> (long) (time * 1000); // Default to seconds
+                case "s", "" -> time;
+                case "ms" -> time / 1000.0;
+                case "us" -> time / 1_000_000.0;
+                case "ns" -> time / 1_000_000_000.0;
+                default -> time; // Default to seconds
             };
         } catch (NumberFormatException e) {
             return null;
@@ -446,7 +450,7 @@ public class ThreadDumpParser {
     }
 
     @Nullable
-    private Integer parseIntSafe(String value) {
+    private static Integer parseIntSafe(String value) {
         if (value == null) return null;
         try {
             return Integer.parseInt(value);
@@ -456,7 +460,7 @@ public class ThreadDumpParser {
     }
 
     @Nullable
-    private Long parseLongSafe(String value) {
+    private static Long parseLongSafe(String value) {
         if (value == null) return null;
         try {
             return Long.parseLong(value);
@@ -466,7 +470,7 @@ public class ThreadDumpParser {
     }
 
     @Nullable
-    private Long parseHexLongSafe(String value) {
+    private static Long parseHexLongSafe(String value) {
         if (value == null) return null;
         try {
             // Remove 0x prefix
@@ -482,7 +486,7 @@ public class ThreadDumpParser {
     /**
      * Parse the deadlock section at the end of a thread dump
      */
-    private DeadlockInfo parseDeadlockSection(BufferedReader reader) throws IOException {
+    private static DeadlockInfo parseDeadlockSection(BufferedReader reader) throws IOException {
         List<DeadlockInfo.DeadlockedThread> deadlockedThreads = new ArrayList<>();
         String summary = null;
         String line;
@@ -571,7 +575,7 @@ public class ThreadDumpParser {
     /**
      * Parse the stack information section of deadlock info
      */
-    private void parseDeadlockStackSection(BufferedReader reader,
+    private static void parseDeadlockStackSection(BufferedReader reader,
             List<DeadlockInfo.DeadlockedThread> deadlockedThreads) throws IOException {
         String line;
         String currentThreadName = null;
@@ -653,7 +657,7 @@ public class ThreadDumpParser {
     /**
      * Update a deadlocked thread with stack trace and lock information
      */
-    private void updateDeadlockedThreadWithStack(List<DeadlockInfo.DeadlockedThread> deadlockedThreads,
+    private static void updateDeadlockedThreadWithStack(List<DeadlockInfo.DeadlockedThread> deadlockedThreads,
             String threadName, List<StackFrame> stackTrace, List<LockInfo> locks) {
         for (int i = 0; i < deadlockedThreads.size(); i++) {
             DeadlockInfo.DeadlockedThread thread = deadlockedThreads.get(i);
@@ -683,8 +687,8 @@ public class ThreadDumpParser {
         Integer priority;
         Boolean daemon;
         Thread.State state;
-        Long cpuTimeMs;
-        Long elapsedTimeMs;
+        Double cpuTimeSec;
+        Double elapsedTimeSec;
         List<StackFrame> stackTrace = new ArrayList<>();
         List<LockInfo> locks = new ArrayList<>();
         String waitingOnLock;
@@ -698,8 +702,8 @@ public class ThreadDumpParser {
                     priority,
                     daemon,
                     state,
-                    cpuTimeMs,
-                    elapsedTimeMs,
+                    cpuTimeSec,
+                    elapsedTimeSec,
                     stackTrace,
                     locks,
                     waitingOnLock,

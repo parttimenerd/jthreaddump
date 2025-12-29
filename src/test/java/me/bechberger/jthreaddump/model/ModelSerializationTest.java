@@ -26,8 +26,8 @@ class ModelSerializationTest {
                 5,
                 false,
                 Thread.State.RUNNABLE,
-                100L,
-                5000L,
+                100.0,
+                5000.0,
                 List.of(new StackFrame("com.example.Test", "method", "Test.java", 42)),
                 List.of(new LockInfo("0x123", "java.lang.Object", "locked")),
                 null,
@@ -52,9 +52,9 @@ class ModelSerializationTest {
                 "Test JVM",
                 List.of(
                         new ThreadInfo("thread1", 1L, 0x100L, 5, false, Thread.State.RUNNABLE,
-                                100L, 1000L, List.of(), List.of(), null, null),
+                                100.0, 1000.0, List.of(), List.of(), null, null),
                         new ThreadInfo("thread2", 2L, 0x200L, 5, true, Thread.State.WAITING,
-                                50L, 2000L, List.of(), List.of(), null, null)
+                                50.0, 2000.0, List.of(), List.of(), null, null)
                 ),
                 new JniInfo(100, 200, 1000L, 2000L),
                 "jstack"
@@ -79,7 +79,7 @@ class ModelSerializationTest {
                 "Test JVM",
                 List.of(
                         new ThreadInfo("thread1", 1L, 0x100L, 5, false, Thread.State.RUNNABLE,
-                                100L, 1000L, List.of(), List.of(), null, null)
+                                100.0, 1000.0, List.of(), List.of(), null, null)
                 ),
                 null,
                 "jstack"
@@ -149,8 +149,8 @@ class ModelSerializationTest {
                 null,
                 null,
                 Thread.State.RUNNABLE,
-                null,  // cpuTimeMs is null
-                null,  // elapsedTimeMs is null
+                null,  // cpuTimeSec is null
+                null,  // elapsedTimeSec is null
                 List.of(),
                 List.of(),
                 null,
@@ -161,6 +161,6 @@ class ModelSerializationTest {
         // JsonInclude.Include.NON_NULL should exclude null fields
         assertFalse(json.contains("\"threadId\""));
         assertFalse(json.contains("\"nativeId\""));
-        assertFalse(json.contains("\"cpuTimeMs\""));
+        assertFalse(json.contains("\"cpuTimeSec\""));
     }
 }

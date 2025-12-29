@@ -13,8 +13,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class DeadlockParsingTest {
 
-    private final ThreadDumpParser parser = new ThreadDumpParser();
-
     @Test
     void testParseDeadlockSection() throws IOException {
         String dumpWithDeadlock = """
@@ -58,7 +56,7 @@ class DeadlockParsingTest {
                 Found 1 deadlock.
                 """;
 
-        ThreadDump dump = parser.parse(dumpWithDeadlock);
+        ThreadDump dump = ThreadDumpParser.parse(dumpWithDeadlock);
 
         // Verify basic dump structure
         assertNotNull(dump);
@@ -119,7 +117,7 @@ class DeadlockParsingTest {
                    at test.Example.main(Example.java:10)
                 """;
 
-        ThreadDump dump = parser.parse(normalDump);
+        ThreadDump dump = ThreadDumpParser.parse(normalDump);
 
         assertNotNull(dump);
         assertEquals(1, dump.threads().size());
@@ -148,7 +146,7 @@ class DeadlockParsingTest {
                 Found 1 deadlock.
                 """;
 
-        ThreadDump dump = parser.parse(threeWayDeadlock);
+        ThreadDump dump = ThreadDumpParser.parse(threeWayDeadlock);
 
         assertNotNull(dump);
         assertFalse(dump.deadlockInfos().isEmpty());

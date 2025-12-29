@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class EnhancedThreadDumpParserTest {
 
-    private final ThreadDumpParser parser = new ThreadDumpParser();
     private final ObjectMapper jsonMapper = new ObjectMapper().findAndRegisterModules();
 
     /**
@@ -46,7 +45,7 @@ class EnhancedThreadDumpParserTest {
         assertTrue(Files.exists(dumpFile), "Dump file should exist");
 
         String content = Files.readString(dumpFile);
-        ThreadDump dump = parser.parse(content);
+        ThreadDump dump = ThreadDumpParser.parse(content);
 
         assertNotNull(dump);
         assertTrue(dump.threads().size() >= minExpectedThreads,
@@ -73,7 +72,7 @@ class EnhancedThreadDumpParserTest {
         Path dumpFile = ThreadDumpGenerator.getOrGenerateThreadDump("deadlock",
                 ThreadDumpGenerator.deadlockScenario());
         String content = Files.readString(dumpFile);
-        ThreadDump dump = parser.parse(content);
+        ThreadDump dump = ThreadDumpParser.parse(content);
 
         // Find deadlocked threads
         ThreadInfo threadA = findThreadByNameContains(dump, "DeadlockThread-A");
@@ -99,7 +98,7 @@ class EnhancedThreadDumpParserTest {
         Path dumpFile = ThreadDumpGenerator.getOrGenerateThreadDump("virtual-threads",
                 ThreadDumpGenerator.virtualThreadScenario());
         String content = Files.readString(dumpFile);
-        ThreadDump dump = parser.parse(content);
+        ThreadDump dump = ThreadDumpParser.parse(content);
 
         // Note: jstack doesn't show virtual threads by name, only carrier threads
         // Count carrier threads (ForkJoinPool workers) which is what carries virtual threads
@@ -139,7 +138,7 @@ class EnhancedThreadDumpParserTest {
         Path dumpFile = ThreadDumpGenerator.getOrGenerateThreadDump("reentrant-lock",
                 ThreadDumpGenerator.reentrantLockScenario());
         String content = Files.readString(dumpFile);
-        ThreadDump dump = parser.parse(content);
+        ThreadDump dump = ThreadDumpParser.parse(content);
 
         ThreadInfo lockHolder = findThreadByNameContains(dump, "LockHolder");
         ThreadInfo lockWaiter = findThreadByNameContains(dump, "LockWaiter");
@@ -162,7 +161,7 @@ class EnhancedThreadDumpParserTest {
         Path dumpFile = ThreadDumpGenerator.getOrGenerateThreadDump("complex",
                 ThreadDumpGenerator.complexScenario());
         String content = Files.readString(dumpFile);
-        ThreadDump dump = parser.parse(content);
+        ThreadDump dump = ThreadDumpParser.parse(content);
 
         // Verify basic structure
         assertNotNull(dump.timestamp());
@@ -195,7 +194,7 @@ class EnhancedThreadDumpParserTest {
                    at com.example.Main.run(Main.java:5)
                 """;
 
-        ThreadDump dump = parser.parse(threadDump);
+        ThreadDump dump = ThreadDumpParser.parse(threadDump);
 
         // Build expected structure
         ThreadInfo expectedThread = new ThreadInfo(
@@ -205,8 +204,8 @@ class EnhancedThreadDumpParserTest {
                 5,
                 null,  // daemon should be null when not explicitly set
                 Thread.State.RUNNABLE,
-                100L,
-                5000L,
+                0.100,
+                5.000,
                 List.of(
                         new me.bechberger.jthreaddump.model.StackFrame("com.example.Main", "main", "Main.java", 10),
                         new me.bechberger.jthreaddump.model.StackFrame("com.example.Main", "run", "Main.java", 5)
@@ -239,7 +238,7 @@ class EnhancedThreadDumpParserTest {
                    - locked <0xcafebabe> (a java.lang.String)
                 """;
 
-        ThreadDump dump = parser.parse(threadDump);
+        ThreadDump dump = ThreadDumpParser.parse(threadDump);
 
         // Build expected structure
         ThreadInfo expectedThread = new ThreadInfo(
@@ -281,14 +280,14 @@ class EnhancedThreadDumpParserTest {
                 "MinimalThread" runnable
                 """;
 
-        ThreadDump dump = parser.parse(threadDump);
+        ThreadDump dump = ThreadDumpParser.parse(threadDump);
         String json = jsonMapper.writeValueAsString(dump);
 
         // Verify null fields are not present
         assertFalse(json.contains("\"threadId\""), "Null threadId should not be serialized");
         assertFalse(json.contains("\"nativeId\""), "Null nativeId should not be serialized");
         assertFalse(json.contains("\"priority\""), "Null priority should not be serialized");
-        assertFalse(json.contains("\"cpuTimeMs\""), "Null cpuTimeMs should not be serialized");
+        assertFalse(json.contains("\"cpuTimeSec\""), "Null cpuTimeSec should not be serialized");
     }
 
     @Test
@@ -300,7 +299,7 @@ class EnhancedThreadDumpParserTest {
                    - locked <0x123> (a java.lang.Object)
                 """;
 
-        ThreadDump originalDump = parser.parse(threadDump);
+        ThreadDump originalDump = ThreadDumpParser.parse(threadDump);
 
         // Serialize to JSON
         String json = jsonMapper.writeValueAsString(originalDump);
@@ -317,7 +316,7 @@ class EnhancedThreadDumpParserTest {
         Path dumpFile = ThreadDumpGenerator.getOrGenerateThreadDump("virtual-thread-deadlock",
                 ThreadDumpGenerator.virtualThreadDeadlockScenario());
         String content = Files.readString(dumpFile);
-        ThreadDump dump = parser.parse(content);
+        ThreadDump dump = ThreadDumpParser.parse(content);
 
         assertNotNull(dump);
         assertTrue(dump.threads().size() > 0, "Should have parsed some threads");

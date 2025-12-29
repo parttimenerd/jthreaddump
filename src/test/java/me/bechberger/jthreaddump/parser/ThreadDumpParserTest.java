@@ -21,8 +21,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ThreadDumpParserTest {
 
-    private final ThreadDumpParser parser = new ThreadDumpParser();
-
     /**
      * Assert that two thread dumps are equal ignoring hex values, with detailed error message on failure
      */
@@ -149,14 +147,14 @@ class ThreadDumpParserTest {
                          .append(", Parsed=").append(prs.daemon()).append("\n");
                 }
 
-                if (!java.util.Objects.equals(exp.cpuTimeMs(), prs.cpuTimeMs())) {
-                    error.append("  CPU time: Expected=").append(exp.cpuTimeMs())
-                         .append(", Parsed=").append(prs.cpuTimeMs()).append("\n");
+                if (!java.util.Objects.equals(exp.cpuTimeSec(), prs.cpuTimeSec())) {
+                    error.append("  CPU time: Expected=").append(exp.cpuTimeSec())
+                         .append(", Parsed=").append(prs.cpuTimeSec()).append("\n");
                 }
 
-                if (!java.util.Objects.equals(exp.elapsedTimeMs(), prs.elapsedTimeMs())) {
-                    error.append("  Elapsed time: Expected=").append(exp.elapsedTimeMs())
-                         .append(", Parsed=").append(prs.elapsedTimeMs()).append("\n");
+                if (!java.util.Objects.equals(exp.elapsedTimeSec(), prs.elapsedTimeSec())) {
+                    error.append("  Elapsed time: Expected=").append(exp.elapsedTimeSec())
+                         .append(", Parsed=").append(prs.elapsedTimeSec()).append("\n");
                 }
 
                 // Compare stack traces
@@ -252,7 +250,7 @@ class ThreadDumpParserTest {
     void testParseThreadDump(String fileName, int expectedThreadCount, String expectedSource,
                               boolean expectJniInfo, boolean expectJvmInfo) throws IOException {
         String content = loadResource(fileName);
-        ThreadDump dump = parser.parse(content);
+        ThreadDump dump = ThreadDumpParser.parse(content);
 
         assertNotNull(dump, "Dump should not be null");
         assertEquals(expectedThreadCount, dump.threads().size(),
@@ -271,7 +269,7 @@ class ThreadDumpParserTest {
     @Test
     void testParseJstackDetailed() throws IOException {
         String content = loadResource("thread-dump-jstack.txt");
-        ThreadDump parsed = parser.parse(content);
+        ThreadDump parsed = ThreadDumpParser.parse(content);
 
         ThreadDump expected = new ThreadDump(
                 parsed.timestamp(),
@@ -284,8 +282,8 @@ class ThreadDumpParserTest {
                                 5,
                                 null,
                                 Thread.State.RUNNABLE,
-                                125L,
-                                10250L,
+                                0.1255,
+                                10.250,
                                 List.of(
                                         new StackFrame("java.io.FileInputStream", "readBytes", null, null, true),
                                         new StackFrame("java.io.FileInputStream", "read", "FileInputStream.java", 276),
@@ -303,8 +301,8 @@ class ThreadDumpParserTest {
                                 10,
                                 true,
                                 Thread.State.WAITING,
-                                0L,
-                                10200L,
+                                0.0005,
+                                10.200,
                                 List.of(
                                         new StackFrame("java.lang.ref.Reference", "waitForReferencePendingList", null, null, true),
                                         new StackFrame("java.lang.ref.Reference", "processPendingReferences", "Reference.java", 246),
@@ -321,8 +319,8 @@ class ThreadDumpParserTest {
                                 8,
                                 true,
                                 Thread.State.WAITING,
-                                0L,
-                                10190L,
+                                0.00025,
+                                10.190,
                                 List.of(
                                         new StackFrame("java.lang.Object", "wait", null, null, true),
                                         new StackFrame("java.lang.ref.ReferenceQueue", "remove", "ReferenceQueue.java", 155),
@@ -343,8 +341,8 @@ class ThreadDumpParserTest {
                                 5,
                                 null,
                                 Thread.State.RUNNABLE,
-                                2500L,
-                                8500L,
+                                2.500,
+                                8.500,
                                 List.of(
                                         new StackFrame("java.net.SocketInputStream", "socketRead0", null, null, true),
                                         new StackFrame("java.net.SocketInputStream", "read", "SocketInputStream.java", 186),
@@ -361,8 +359,8 @@ class ThreadDumpParserTest {
                                 5,
                                 null,
                                 Thread.State.BLOCKED,
-                                0L,
-                                8450L,
+                                0.0,
+                                8.4500,
                                 List.of(
                                         new StackFrame("com.example.Worker", "processRequest", "Worker.java", 45),
                                         new StackFrame("com.example.Worker", "run", "Worker.java", 30)
@@ -385,7 +383,7 @@ class ThreadDumpParserTest {
     @Test
     void testParseDeadlock() throws IOException {
         String content = loadResource("thread-dump-deadlock.txt");
-        ThreadDump parsed = parser.parse(content);
+        ThreadDump parsed = ThreadDumpParser.parse(content);
 
         ThreadDump expected = new ThreadDump(
                 parsed.timestamp(), // Use parsed timestamp
@@ -448,7 +446,7 @@ class ThreadDumpParserTest {
                 me.bechberger.jthreaddump.test.ThreadDumpGenerator.multiDeadlockScenario()
         );
         String content = Files.readString(dumpFile);
-        ThreadDump parsed = parser.parse(content);
+        ThreadDump parsed = ThreadDumpParser.parse(content);
 
         // Extract just the 5 scenario threads for comparison (ignore system threads)
         List<ThreadInfo> scenarioThreads = parsed.threads().stream()
@@ -582,7 +580,7 @@ class ThreadDumpParserTest {
     @Test
     void testParseMinimal() throws IOException {
         String content = loadResource("thread-dump-minimal.txt");
-        ThreadDump parsed = parser.parse(content);
+        ThreadDump parsed = ThreadDumpParser.parse(content);
 
         ThreadDump expected = new ThreadDump(
                 parsed.timestamp(),
@@ -613,7 +611,7 @@ class ThreadDumpParserTest {
     @Test
     void testParseJcmd() throws IOException {
         String content = loadResource("thread-dump-jcmd.txt");
-        ThreadDump parsed = parser.parse(content);
+        ThreadDump parsed = ThreadDumpParser.parse(content);
 
         ThreadDump expected = new ThreadDump(
                 parsed.timestamp(),
@@ -688,7 +686,7 @@ class ThreadDumpParserTest {
 
     @Test
     void testEmptyInput() throws IOException {
-        ThreadDump dump = parser.parse("");
+        ThreadDump dump = ThreadDumpParser.parse("");
         assertNotNull(dump);
         assertEquals(0, dump.threads().size());
     }
@@ -702,7 +700,7 @@ class ThreadDumpParserTest {
                    at some.Class.method(Unknown Source)
                 """;
 
-        ThreadDump parsed = parser.parse(malformed);
+        ThreadDump parsed = ThreadDumpParser.parse(malformed);
 
         ThreadDump expected = new ThreadDump(
                 parsed.timestamp(),
@@ -737,30 +735,34 @@ class ThreadDumpParserTest {
      */
     static Stream<Arguments> timeParsingProvider() {
         return Stream.of(
-                Arguments.of("cpu=1.5s", 1500L),
-                Arguments.of("cpu=250ms", 250L),
-                Arguments.of("cpu=500000us", 500L),
-                Arguments.of("cpu=1000000ns", 1L),
-                Arguments.of("elapsed=10.25s", 10250L)
+                Arguments.of("cpu=1.5s", 1.5),
+                Arguments.of("cpu=250ms", 0.25),
+                Arguments.of("cpu=500000us", 0.5),
+                Arguments.of("cpu=1000000ns", 0.001),
+                Arguments.of("cpu=10429.07ms", 10.42907),
+                Arguments.of("elapsed=10.25s", 10.25),
+                Arguments.of("elapsed=47185.99s", 47185.99)
         );
     }
 
-    @ParameterizedTest(name = "Time parsing: {0} -> {1}ms")
+    @ParameterizedTest(name = "Time parsing: {0} -> {1}s")
     @MethodSource("timeParsingProvider")
-    void testTimeParsing(String timeLine, long expectedMs) throws IOException {
+    void testTimeParsing(String timeLine, double expectedSec) throws IOException {
         String threadDump = String.format("""
                 "Test" #1 prio=5 %s tid=0x1000 nid=0x1000 runnable
                    java.lang.Thread.State: RUNNABLE
                 """, timeLine);
 
-        ThreadDump dump = parser.parse(threadDump);
+        ThreadDump dump = ThreadDumpParser.parse(threadDump);
         assertEquals(1, dump.threads().size());
         ThreadInfo thread = dump.threads().get(0);
 
         if (timeLine.startsWith("cpu=")) {
-            assertEquals(expectedMs, thread.cpuTimeMs());
+            assertNotNull(thread.cpuTimeSec());
+            assertEquals(expectedSec, thread.cpuTimeSec(), 0.00001);
         } else if (timeLine.startsWith("elapsed=")) {
-            assertEquals(expectedMs, thread.elapsedTimeMs());
+            assertNotNull(thread.elapsedTimeSec());
+            assertEquals(expectedSec, thread.elapsedTimeSec(), 0.00001);
         }
     }
 
@@ -786,7 +788,7 @@ class ThreadDumpParserTest {
                    java.lang.Thread.State: %s
                 """, stateString);
 
-        ThreadDump dump = parser.parse(threadDump);
+        ThreadDump dump = ThreadDumpParser.parse(threadDump);
         assertEquals(1, dump.threads().size());
         assertEquals(expectedState, dump.threads().get(0).state());
     }
@@ -802,7 +804,7 @@ class ThreadDumpParserTest {
                    at com.example.Test.method4(Test.java)
                 """;
 
-        ThreadDump parsed = parser.parse(threadDump);
+        ThreadDump parsed = ThreadDumpParser.parse(threadDump);
 
         ThreadDump expected = new ThreadDump(
                 parsed.timestamp(),

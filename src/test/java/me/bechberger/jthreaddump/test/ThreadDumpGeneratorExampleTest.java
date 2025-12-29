@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class ThreadDumpGeneratorExampleTest {
 
-    private final ThreadDumpParser parser = new ThreadDumpParser();
     private final ObjectMapper jsonMapper = new ObjectMapper().findAndRegisterModules();
 
     /**
@@ -52,7 +51,7 @@ public class ThreadDumpGeneratorExampleTest {
         assertTrue(Files.exists(dumpFile), "Dump file should exist");
 
         String content = Files.readString(dumpFile);
-        ThreadDump dump = parser.parse(content);
+        ThreadDump dump = ThreadDumpParser.parse(content);
 
         // Basic assertions
         assertNotNull(dump, "Dump should not be null");
@@ -73,7 +72,7 @@ public class ThreadDumpGeneratorExampleTest {
                 "deadlock-detailed", ThreadDumpGenerator.deadlockScenario());
 
         String content = Files.readString(dumpFile);
-        ThreadDump dump = parser.parse(content);
+        ThreadDump dump = ThreadDumpParser.parse(content);
 
         assertNotNull(dump);
 
@@ -126,7 +125,7 @@ public class ThreadDumpGeneratorExampleTest {
                 "three-way-deadlock-detailed", ThreadDumpGenerator.threeWayDeadlockScenario());
 
         String content = Files.readString(dumpFile);
-        ThreadDump dump = parser.parse(content);
+        ThreadDump dump = ThreadDumpParser.parse(content);
 
         assertNotNull(dump);
 
@@ -153,7 +152,7 @@ public class ThreadDumpGeneratorExampleTest {
                 "thread-pool-detailed", ThreadDumpGenerator.threadPoolScenario());
 
         String content = Files.readString(dumpFile);
-        ThreadDump dump = parser.parse(content);
+        ThreadDump dump = ThreadDumpParser.parse(content);
 
         assertNotNull(dump);
         assertNotNull(dump.threads());
@@ -178,7 +177,7 @@ public class ThreadDumpGeneratorExampleTest {
                 "complex-detailed", ThreadDumpGenerator.complexScenario());
 
         String content = Files.readString(dumpFile);
-        ThreadDump dump = parser.parse(content);
+        ThreadDump dump = ThreadDumpParser.parse(content);
 
         assertNotNull(dump);
         assertNotNull(dump.threads());
@@ -223,7 +222,7 @@ public class ThreadDumpGeneratorExampleTest {
         // Parse all dumps and verify round-trip equality
         for (int i = 0; i < dumpPaths.size(); i++) {
             String content = Files.readString(dumpPaths.get(i));
-            ThreadDump dump = parser.parse(content);
+            ThreadDump dump = ThreadDumpParser.parse(content);
 
             assertNotNull(dump, "Dump " + i + " should not be null");
             assertNotNull(dump.threads(), "Dump " + i + " should have threads list");
@@ -247,7 +246,7 @@ public class ThreadDumpGeneratorExampleTest {
         // Parse all and verify they're all valid
         for (int i = 0; i < dumpPaths.size(); i++) {
             String content = Files.readString(dumpPaths.get(i));
-            ThreadDump dump = parser.parse(content);
+            ThreadDump dump = ThreadDumpParser.parse(content);
 
             assertNotNull(dump);
 
@@ -270,7 +269,7 @@ public class ThreadDumpGeneratorExampleTest {
         // Parse all dumps
         for (int i = 0; i < dumpPaths.size(); i++) {
             String content = Files.readString(dumpPaths.get(i));
-            ThreadDump dump = parser.parse(content);
+            ThreadDump dump = ThreadDumpParser.parse(content);
 
             assertNotNull(dump);
 
@@ -299,7 +298,7 @@ public class ThreadDumpGeneratorExampleTest {
 
         for (int i = 0; i < dumpPaths.size(); i++) {
             String content = Files.readString(dumpPaths.get(i));
-            ThreadDump dump = parser.parse(content);
+            ThreadDump dump = ThreadDumpParser.parse(content);
 
             assertNotNull(dump);
 
