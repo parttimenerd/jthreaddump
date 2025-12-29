@@ -191,10 +191,10 @@ mvn test
 Use the included Python script to automate version bumps and releases:
 
 ```bash
-# Bump minor version (0.1.0 -> 0.2.0), run tests, build
+# Bump minor version (0.0.0 -> 0.2.0), run tests, build
 ./release.py
 
-# Bump patch version (0.1.0 -> 0.1.1)
+# Bump patch version (0.0.0 -> 0.1.1)
 ./release.py --patch
 
 # Full release: bump, test, build, deploy, commit, tag, push
