@@ -1,417 +1,213 @@
-# jstall – Simple Thread Dump Analyzer
+# jthreaddump – Java Thread Dump Parser Library
 
-## 1. Purpose
+A small Java library for parsing thread dumps from `jstack` and `jcmd` output.
 
-**Primary use case**
-> My Java application is stalled (UI or CLI not updating) and I want to know why.
+## Features
 
-`jstall` is a **small, robust, CLI-only diagnostic tool** for analyzing Java thread dumps. It focuses on detecting stalls, deadlocks, lack of progress, and lock contention by **correlating multiple thread dumps over time**.
+- **Parse jstack and jcmd output** - Automatic format detection
+- **Rich data model** - Thread states, stack traces, locks, JNI refs, deadlocks
+- **Multiple output formats** - Text, JSON, YAML
+- **Well-tested** - 73+ tests covering edge cases
+- **Java 21+** - Modern Java with records and pattern matching
+- **Zero analysis** - Just parsing, you build the analysis
 
-Key principles:
-- Human-readable output by default
-- Machine-readable output available (JSON/YAML)
-- Minimal configuration (CLI flags only)
-- Robust heuristics (state + CPU + elapsed + stacks)
-- Scales to **1000+ threads** per dump
+## Quick Start
 
-**New feature additions based on advanced use cases:**
-- Identical stack grouping across multiple dumps to quickly detect stuck threads.
-- RUNNABLE-no-progress detection to identify threads that appear active but make no real progress.
-- Elapsed-based long-held lock detection for highlighting contention issues.
-- Clear, explanatory stall verdicts with reasons to build trust.
-- Thread churn / growth reporting to detect leaks or executor mismanagement.
-
----
-
-## 2. Supported Inputs
-
-### 2.1 Thread Dump Sources
-
-Supported formats:
-- `jstack <pid>` output
-- `jcmd <pid> Thread.print` output
-
-Features supported from both:
-- Thread states
-- CPU time
-- Elapsed time
-- Stack traces
-- Monitor / lock ownership
-- JNI global & weak references
-
-Format detection is automatic.
-
----
-
-## 3. Core Commands
-
-### 3.1 Parse
-
-```bash
-jstall parse dump.txt
-```
-
-- Parses a single thread dump
-- Outputs structured representation
-- Default: human-readable text
-- Optional: `--output json|yaml|html`
-
----
-
-### 3.2 Diff
-
-```bash
-jstall diff dump1 dump2 [dump3 ...]
-```
-
-Compares multiple dumps and answers:
-- Which threads appear/disappear
-- Which threads made progress
-- Which threads are blocked or stuck
-- Which locks are contended or long-held
-- Groups threads by identical stack traces to quickly highlight stuck threads
-- Reports thread churn / growth between dumps
-
-Options:
-- `--only-moving`
-- `--only-blocked`
-- `-m minimal|large|quiet|short-stall`
-- `--fail-on-stall`
-
----
-
-### 3.3 Stall (Live JVM)
-
-```bash
-jstall stall <pid> -i 3 -t 10s
-```
-
-- Uses Attach API (same-user JVMs only)
-- Captures multiple dumps
-- Runs diff + stall analysis
-- Returns verdict immediately
-- Explains reasons for detected stalls (elapsed time, CPU progress, identical stacks)
-
-Exit codes:
-- `0` – OK
-- `1` – stall suspected
-- `2` – deadlock detected
-- `3` – error
-
-
-Diff and stall commands should support the same options for consistency 
-(except those specific to getting the thread dumps).
-
----
-
-## 4. Output Modes
-
-### 4.1 Default Output
-
-- Human-readable
-- Well-formatted
-- Optimized for terminal use
-- Shows identical stack groups, RUNNABLE-no-progress threads, long-held locks, and thread churn
-
-Example:
-```
-VERDICT: SUSPECTED_STALL
-Confidence: HIGH
-
-Reason:
-- 12/12 RUNNABLE threads made no progress over 20s
-- 15 threads share identical stack:
-    at java.net.SocketInputStream.read
-    at com.foo.NetClient.receive
-- Lock <0xabc123> held for ≥20s by Worker-3
-```
-
-### 4.2 Other Formats
-
-- `--output json`
-- `--output yaml`
-- `--output html` (optional; includes lock dependency graph and expandable stacks)
-
----
-
-## 5. Thread Model
-
-### 5.1 Canonical Thread States
-
-Parsed exactly as defined by `java.lang.Thread.State`:
-
-- NEW
-- RUNNABLE
-- BLOCKED
-- WAITING
-- TIMED_WAITING
-- TERMINATED
-
-State alone is **never sufficient** for diagnostics.
-
----
-
-## 6. Temporal Data (Critical)
-
-Each thread may include:
-- **CPU time** (expected to be present)
-- **Elapsed time** (wall-clock since thread start)
-
-If CPU time is missing:
-- Warning is emitted
-- Stall detection degrades
-- Only deadlock and stack-diff heuristics remain
-
-Elapsed time is used to:
-- Detect lack of progress
-- Detect thread restarts
-- Detect long-held locks
-
-
-for stall command:
-optional ability to take ExecutionSamples and Nati
-veMethodSamples for the whole time period
-to find top methods and common stacks across the time period
-for every thread that got cpu time
-
-Also show me the most allocating threads
-and the most class loading threads
-
----
-
-## 7. Thread Identity Across Dumps
-
-Thread matching priority:
-1. Native thread id (`nid`)
-2. Java thread id
-3. Thread name (last resort, warning emitted)
-
-Elapsed time sanity checks:
-- Decreasing elapsed → thread restarted
-- Identical elapsed → duplicate dump
-
----
-
-## 8. Derived Progress Classification
-
-### 8.1 ProgressClassification
+### As a Library
 
 ```java
-enum ProgressClassification {
-    ACTIVE,
-    RUNNABLE_NO_PROGRESS,
-    BLOCKED_ON_LOCK,
-    WAITING_EXPECTED,
-    TIMED_WAITING_EXPECTED,
-    STUCK,
-    RESTARTED,
-    TERMINATED,
-    IGNORED
+import me.bechberger.jthreaddump.parser.ThreadDumpParser;
+import me.bechberger.jthreaddump.model.ThreadDump;
+
+// Parse from string
+ThreadDumpParser parser = new ThreadDumpParser();
+ThreadDump dump = parser.parse(threadDumpString);
+
+// Access parsed data
+System.out.println("Total threads: " + dump.threads().size());
+for (var thread : dump.threads()) {
+    System.out.println(thread.name() + " - " + thread.state());
+}
+
+// Check for deadlocks
+if (dump.deadlockInfos() != null && !dump.deadlockInfos().isEmpty()) {
+    System.out.println("Deadlocks detected!");
 }
 ```
 
-This classification is computed **between dumps**, and feeds new features such as identical stack grouping and long-held lock detection.
+### Using JStackUtil
 
----
+```java
+import me.bechberger.jthreaddump.util.JStackUtil;
 
-## 9. State Interpretation Rules
+// Capture thread dump from live process
+long pid = 12345;
+String threadDump = JStackUtil.captureThreadDump(pid);
 
-### 9.1 NEW
+// Or use jcmd instead
+String threadDump = JStackUtil.captureThreadDump(pid, true);
 
-- Ignored
-- Never contributes to stall detection
-
-### 9.2 RUNNABLE
-
-| Condition | Classification |
-|---------|----------------|
-| ΔCPU > ε | ACTIVE |
-| ΔCPU ≈ 0, stack changed | ACTIVE |
-| ΔCPU ≈ 0, stack unchanged | RUNNABLE_NO_PROGRESS |
-
-**Captures threads that appear active but are stalled** (e.g., socket-read loops). Identical stack grouping highlights clusters of these threads.
-
-### 9.3 BLOCKED
-
-| Condition | Classification |
-|---------|----------------|
-| Waiting on lock | BLOCKED_ON_LOCK |
-| Same lock across dumps | STUCK |
-
----
-
-### 9.4 WAITING
-
-| Condition | Classification |
-|---------|----------------|
-| Known JVM background thread | WAITING_EXPECTED |
-| Application thread, no progress | STUCK |
-
-### 9.5 TIMED_WAITING
-
-| Condition | Classification |
-|---------|----------------|
-| Scheduler / background | TIMED_WAITING_EXPECTED |
-| Repeated unchanged | STUCK |
-
-### 9.6 TERMINATED
-
-- Not considered for stall detection
-- Used to detect thread churn/growth
-
-have tables that show the count in every dump and the changes
-over time
-
----
-
-## 10. Stall Detection (Application-Level)
-
-Application is **stalled** if **any** of:
-1. Deadlock detected
-2. ≥ 90% of non-ignored threads classified as:
-    - RUNNABLE_NO_PROGRESS
-    - BLOCKED_ON_LOCK
-    - STUCK
-3. All RUNNABLE threads show no progress
-
-Defaults:
-- CPU epsilon: 2ms
-- Dumps required: ≥ 2
-- Explanations include identical stacks, elapsed time, long-held locks, and thread churn
-
----
-
-## 11. Lock Dependency Graph
-
-Graph model:
-- Nodes: Threads, Locks
-- Edges:
-    - Thread → Lock (waiting)
-    - Lock → Thread (owned)
-
-Capabilities:
-- Deadlock detection: already builtin to JDK
-- Hot lock detection
-- Long-held lock detection using elapsed time
-- Optional HTML visualization (see Optional / Advanced features)
-
-## 20 Zoom into specific threads
-verbose output showing full stacks of selected thread
-and how they evolved over time (ignore common base)
-have cmd option to only focus on thread names matching glob
-
----
-
-## 12. Noise Reduction
-
-Ignored by default:
-- Threads starting with `GC`
-- Threads starting with `VM`
-- Finalizer
-- Reference Handler
-- but also allow to include or even just focus on these
-
-Unless:
-- CPU usage > 20% of total
-
-Custom ignore regex supported.
-
-
----
-
-## 13. JNI Resource Analysis
-
-Parsed if present:
-```
-JNI global refs: 247, weak refs: 3181
-JNI global refs memory usage: 3363, weak refs: 70049
+// Parse it
+ThreadDump dump = new ThreadDumpParser().parse(threadDump);
 ```
 
-Heuristic:
-- Rising JNI globals across dumps
-- Elapsed time advanced
-- CPU low
+### CLI Tool
 
-→ possible JNI resource leak
+```bash
+# Parse and display summary
+jthreaddump dump.txt
 
-have table with the changes over time, maybe even a rate computed
+# Output as JSON
+jthreaddump dump.txt -o JSON
 
-## 21 Analyze GC Activity
-Analyze GC activity based on thread dump data.
+# Output as YAML
+jthreaddump dump.txt -o YAML
 
-## 22 Support Loom threads
-Differentiate between platform and virtual threads.
+# Quiet mode (minimal output)
+jthreaddump dump.txt -q
 
-Use examples to find out the information
+# Read from stdin
+jstack 12345 | jthreaddump -
 
+# Verbose mode
+jthreaddump dump.txt -v
+```
 
----
+## Installation
 
-## 15. Implementation Constraints
+### Maven
 
-- Java 21
-- CLI-only
-- No config files
-- Jackson for JSON/YAML
-- JSON schema provided
-- GraalVM native image builds
-- CI and test-heavy repository
+```xml
+<dependency>
+    <groupId>me.bechberger</groupId>
+    <artifactId>jthreaddump</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```
 
-Use CI/CD and README similar to 
-https://github.com/parttimenerd/jstall
+### Build from Source
 
-Generate schema
+```bash
+git clone https://github.com/parttimenerd/jthreaddump
+cd jthreaddump
+mvn clean package
 
-Adapt sync-documentation.py and README
+# Run CLI
+java -jar target/jthreaddump.jar dump.txt
+```
 
----
+## Supported Formats
 
-## 16. Testing Strategy
+### jstack Output
 
-- Golden thread dumps (jstack + jcmd)
-- Known deadlock examples
-- RUNNABLE no-progress cases
-- Long-held lock tests
-- Thread churn / growth detection
-- Large synthetic dumps (1000+ threads)
-- Renaissance benchmark dumps (via Python script)
+```
+"main" #1 prio=5 tid=0x00007f8b1c00a800 nid=0x1703 runnable [0x0000700001234000]
+   java.lang.Thread.State: RUNNABLE
+   at java.io.FileInputStream.readBytes(Native Method)
+   at java.io.FileInputStream.read(FileInputStream.java:255)
+```
 
----
+### jcmd Thread.print Output
 
-## 17. Optional / Advanced (Good but Keep Optional)
+```
+"main" #1 daemon prio=5 tid=0x1 nid=0x2003 runnable [0x700001234000]
+   java.lang.Thread.State: RUNNABLE
+   at com.example.Main.main(Main.java:10)
+   - locked <0x00000007bff00000> (a java.lang.Object)
+```
 
-### 17.1 Lock Dependency Graph → HTML
+Both formats automatically detected and parsed.
 
-- Worth keeping optional
-- Useful for deep analysis
-- Not needed for quick diagnosis
-- Already scoped correctly: CLI default: text, optional: `--output html`
+## Data Model
 
-### 17.2 Stack Frequency “Top Methods” Table
+The parser extracts:
 
-- People love this, but it can be noisy
-- Limit to top N
-- Ignore JVM internals by default
+- **Thread Info**: name, ID, state, priority, daemon flag, native ID
+- **Stack Traces**: class, method, file, line number, native flag
+- **Locks**: monitors held/waiting, object addresses, lock types
+- **JNI References**: global/weak ref counts and memory
+- **Deadlocks**: detected cycles with involved threads
+- **Timing**: CPU time, elapsed time (when available)
+- **JVM Info**: version, runtime details
 
----
+All data exposed as immutable Java records.
 
-## 18. Status
+## Examples
 
-This document represents the **combined, finalized functional and design specification** for `jstall`, including advanced features inspired by real-world thread-dump usage:
-- Identical stack grouping across multiple dumps
-- RUNNABLE-no-progress detection
-- Elapsed-based long-held lock detection
-- Clear stall explanations
-- Thread churn / growth reporting
-- Optional HTML lock dependency graph visualization
-- Optional stack frequency top methods table
+### Example 1: Find BLOCKED threads
 
+```java
+ThreadDump dump = parser.parse(dumpText);
 
+dump.threads().stream()
+    .filter(t -> "BLOCKED".equals(t.state()))
+    .forEach(t -> System.out.println(t.name() + " is blocked"));
+```
+
+### Example 3: Compare thread counts
+
+```java
+ThreadDump dump1 = parser.parse(Files.readString(Path.of("dump1.txt")));
+ThreadDump dump2 = parser.parse(Files.readString(Path.of("dump2.txt")));
+
+System.out.println("Thread delta: " + 
+    (dump2.threads().size() - dump1.threads().size()));
+```
+
+### Example 4: Find long-running threads
+
+```java
+dump.threads().stream()
+    .filter(t -> t.elapsedTimeMs() != null)
+    .filter(t -> t.elapsedTimeMs() > 60000) // > 1 minute
+    .forEach(t -> System.out.printf("%s: %.1f seconds%n", 
+        t.name(), t.elapsedTimeMs() / 1000.0));
+```
+
+## CLI Usage
+
+```
+Usage: jthreaddump [-hqvV] [-o=<outputFormat>] [<dumpFile>]
+Thread Dump Parser Library - Parse Java thread dumps from jstack/jcmd output
+
+      [<dumpFile>]   Path to the thread dump file (or '-' for stdin)
+  -h, --help         Show this help message and exit.
+  -o, --output=<outputFormat>
+                     Output format: TEXT, JSON, YAML (default: TEXT)
+  -q, --quiet        Minimal output (suppress headers in text mode)
+  -v, --verbose      Enable verbose output
+  -V, --version      Print version information and exit.
+```
+
+## Testing
+
+```bash
+# Run all tests
+mvn test
+```
+
+## Deployment
+
+Use the included Python script to automate version bumps and releases:
+
+```bash
+# Bump minor version (0.1.0 -> 0.2.0), run tests, build
+./release.py
+
+# Bump patch version (0.1.0 -> 0.1.1)
+./release.py --patch
+
+# Full release: bump, test, build, deploy, commit, tag, push
+./release.py --deploy --push
+
+# Dry run to see what would happen
+./release.py --dry-run
+```
 
 Support, Feedback, Contributing
 -------------------------------
 This project is open to feature requests/suggestions, bug reports etc.
-via [GitHub](https://github.com/parttimenerd/jstall/issues) issues.
+via [GitHub](https://github.com/parttimenerd/jthreaddump/issues) issues.
 Contribution and feedback are encouraged and always welcome.
 For more information about how to contribute, the project structure,
 as well as additional contribution information, see our Contribution Guidelines.

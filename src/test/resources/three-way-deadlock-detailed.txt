@@ -40,11 +40,11 @@ _java_thread_list=0x0000600001d8ad20, length=40, elements={
 	at java.util.stream.ReduceOps$ReduceOp.evaluateSequential(java.base@25/ReduceOps.java:921)
 	at java.util.stream.AbstractPipeline.evaluate(java.base@25/AbstractPipeline.java:265)
 	at java.util.stream.ReferencePipeline.collect(java.base@25/ReferencePipeline.java:723)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.captureThreadDump(ThreadDumpGenerator.java:1128)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$0(ThreadDumpGenerator.java:580)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x0000380001231400.generate(Unknown Source)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.getOrGenerateThreadDump(ThreadDumpGenerator.java:43)
-	at me.bechberger.jstall.test.ThreadDumpGeneratorExampleTest.testThreeWayDeadlockScenarioDetailed(ThreadDumpGeneratorExampleTest.java:125)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.captureThreadDump(ThreadDumpGenerator.java:1128)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$0(ThreadDumpGenerator.java:580)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x0000380001231400.generate(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.getOrGenerateThreadDump(ThreadDumpGenerator.java:43)
+	at me.bechberger.jthreaddump.test.ThreadDumpGeneratorExampleTest.testThreeWayDeadlockScenarioDetailed(ThreadDumpGeneratorExampleTest.java:125)
 	at java.lang.invoke.LambdaForm$DMH/0x00003800011b0000.invokeVirtual(java.base@25/LambdaForm$DMH)
 	at java.lang.invoke.LambdaForm$MH/0x00003800011b0800.invoke(java.base@25/LambdaForm$MH)
 	at java.lang.invoke.Invokers$Holder.invokeExact_MT(java.base@25/Invokers$Holder)
@@ -260,10 +260,10 @@ _java_thread_list=0x0000600001d8ad20, length=40, elements={
 
 "DeadlockThread-A" #30 [33539] prio=5 os_prio=31 cpu=0.13ms elapsed=29.23s allocated=208B defined_classes=1 tid=0x000000013e166a00 nid=33539 waiting for monitor entry  [0x0000000172676000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$deadlockScenario$1(ThreadDumpGenerator.java:139)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$deadlockScenario$1(ThreadDumpGenerator.java:139)
 	- waiting to lock <0x0000000504980308> (a java.lang.Object)
 	- locked <0x0000000504980310> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x00003800011ad400.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x00003800011ad400.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -272,10 +272,10 @@ _java_thread_list=0x0000600001d8ad20, length=40, elements={
 
 "DeadlockThread-B" #31 [33795] prio=5 os_prio=31 cpu=0.16ms elapsed=29.23s allocated=296B defined_classes=1 tid=0x000000012d91a000 nid=33795 waiting for monitor entry  [0x0000000172882000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$deadlockScenario$2(ThreadDumpGenerator.java:155)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$deadlockScenario$2(ThreadDumpGenerator.java:155)
 	- waiting to lock <0x0000000504980310> (a java.lang.Object)
 	- locked <0x0000000504980308> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x00003800011ad800.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x00003800011ad800.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -468,10 +468,10 @@ _java_thread_list=0x0000600001d8ad20, length=40, elements={
 
 "DeadlockCandidate-A" #147 [44295] prio=5 os_prio=31 cpu=0.11ms elapsed=19.73s allocated=80B defined_classes=0 tid=0x000000013d93be00 nid=44295 waiting for monitor entry  [0x0000000175bee000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$deadlockFormation$1(ThreadDumpGenerator.java:1017)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$deadlockFormation$1(ThreadDumpGenerator.java:1017)
 	- waiting to lock <0x0000000504993df8> (a java.lang.Object)
 	- locked <0x0000000504993e00> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x000038000122f800.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x000038000122f800.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -480,10 +480,10 @@ _java_thread_list=0x0000600001d8ad20, length=40, elements={
 
 "DeadlockCandidate-B" #148 [43783] prio=5 os_prio=31 cpu=0.09ms elapsed=19.73s allocated=56B defined_classes=0 tid=0x000000012da0b400 nid=43783 waiting for monitor entry  [0x0000000175dfa000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$deadlockFormation$2(ThreadDumpGenerator.java:1032)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$deadlockFormation$2(ThreadDumpGenerator.java:1032)
 	- waiting to lock <0x0000000504993e00> (a java.lang.Object)
 	- locked <0x0000000504993df8> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x000038000122fc00.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x000038000122fc00.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -492,10 +492,10 @@ _java_thread_list=0x0000600001d8ad20, length=40, elements={
 
 "DeadlockThread-A" #201 [56071] prio=5 os_prio=31 cpu=0.12ms elapsed=5.65s allocated=80B defined_classes=0 tid=0x000000011f120600 nid=56071 waiting for monitor entry  [0x0000000176006000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$1(ThreadDumpGenerator.java:537)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$1(ThreadDumpGenerator.java:537)
 	- waiting to lock <0x0000000512a010a8> (a java.lang.Object)
 	- locked <0x0000000512a010b0> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x0000380001233400.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x0000380001233400.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -504,10 +504,10 @@ _java_thread_list=0x0000600001d8ad20, length=40, elements={
 
 "DeadlockThread-B" #202 [59923] prio=5 os_prio=31 cpu=0.09ms elapsed=5.65s allocated=56B defined_classes=0 tid=0x00000001010a2600 nid=59923 waiting for monitor entry  [0x0000000176212000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$2(ThreadDumpGenerator.java:553)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$2(ThreadDumpGenerator.java:553)
 	- waiting to lock <0x0000000512a01890> (a java.lang.Object)
 	- locked <0x0000000512a010a8> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x0000380001233800.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x0000380001233800.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -516,10 +516,10 @@ _java_thread_list=0x0000600001d8ad20, length=40, elements={
 
 "DeadlockThread-C" #203 [46611] prio=5 os_prio=31 cpu=0.07ms elapsed=5.65s allocated=32B defined_classes=0 tid=0x000000013e171800 nid=46611 waiting for monitor entry  [0x000000017641e000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$3(ThreadDumpGenerator.java:569)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$3(ThreadDumpGenerator.java:569)
 	- waiting to lock <0x0000000512a010b0> (a java.lang.Object)
 	- locked <0x0000000512a01890> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x0000380001233c00.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x0000380001233c00.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -528,10 +528,10 @@ _java_thread_list=0x0000600001d8ad20, length=40, elements={
 
 "DeadlockCandidate-A" #280 [57615] prio=5 os_prio=31 cpu=0.11ms elapsed=1.60s allocated=80B defined_classes=0 tid=0x000000011c83be00 nid=57615 waiting for monitor entry  [0x000000017662a000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$deadlockFormation$1(ThreadDumpGenerator.java:1017)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$deadlockFormation$1(ThreadDumpGenerator.java:1017)
 	- waiting to lock <0x00000006b643c7b0> (a java.lang.Object)
 	- locked <0x00000006b643c7a8> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x000038000122f800.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x000038000122f800.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -540,10 +540,10 @@ _java_thread_list=0x0000600001d8ad20, length=40, elements={
 
 "DeadlockCandidate-B" #281 [59671] prio=5 os_prio=31 cpu=0.09ms elapsed=1.60s allocated=56B defined_classes=0 tid=0x000000011c83c600 nid=59671 waiting for monitor entry  [0x0000000176c4e000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$deadlockFormation$2(ThreadDumpGenerator.java:1032)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$deadlockFormation$2(ThreadDumpGenerator.java:1032)
 	- waiting to lock <0x00000006b643c7a8> (a java.lang.Object)
 	- locked <0x00000006b643c7b0> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x000038000122fc00.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x000038000122fc00.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -552,10 +552,10 @@ _java_thread_list=0x0000600001d8ad20, length=40, elements={
 
 "DeadlockThread-A" #287 [58647] prio=5 os_prio=31 cpu=0.11ms elapsed=0.22s allocated=80B defined_classes=0 tid=0x000000013e80b800 nid=58647 waiting for monitor entry  [0x0000000176e5a000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$1(ThreadDumpGenerator.java:537)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$1(ThreadDumpGenerator.java:537)
 	- waiting to lock <0x00000006b40f02d8> (a java.lang.Object)
 	- locked <0x00000006b40f02d0> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x0000380001233400.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x0000380001233400.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -564,10 +564,10 @@ _java_thread_list=0x0000600001d8ad20, length=40, elements={
 
 "DeadlockThread-B" #288 [57883] prio=5 os_prio=31 cpu=0.07ms elapsed=0.22s allocated=56B defined_classes=0 tid=0x000000011f80d400 nid=57883 waiting for monitor entry  [0x0000000177066000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$2(ThreadDumpGenerator.java:553)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$2(ThreadDumpGenerator.java:553)
 	- waiting to lock <0x00000006b40f02e0> (a java.lang.Object)
 	- locked <0x00000006b40f02d8> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x0000380001233800.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x0000380001233800.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -576,10 +576,10 @@ _java_thread_list=0x0000600001d8ad20, length=40, elements={
 
 "DeadlockThread-C" #289 [38951] prio=5 os_prio=31 cpu=0.13ms elapsed=0.22s allocated=32B defined_classes=0 tid=0x000000011f80dc00 nid=38951 waiting for monitor entry  [0x0000000177272000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$3(ThreadDumpGenerator.java:569)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$3(ThreadDumpGenerator.java:569)
 	- waiting to lock <0x00000006b40f02d0> (a java.lang.Object)
 	- locked <0x00000006b40f02e0> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x0000380001233c00.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x0000380001233c00.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -640,17 +640,17 @@ Found one Java-level deadlock:
 Java stack information for the threads listed above:
 ===================================================
 "DeadlockThread-A":
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$deadlockScenario$1(ThreadDumpGenerator.java:139)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$deadlockScenario$1(ThreadDumpGenerator.java:139)
 	- waiting to lock <0x0000000504980308> (a java.lang.Object)
 	- locked <0x0000000504980310> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x00003800011ad400.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x00003800011ad400.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 "DeadlockThread-B":
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$deadlockScenario$2(ThreadDumpGenerator.java:155)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$deadlockScenario$2(ThreadDumpGenerator.java:155)
 	- waiting to lock <0x0000000504980310> (a java.lang.Object)
 	- locked <0x0000000504980308> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x00003800011ad800.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x00003800011ad800.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -667,17 +667,17 @@ Found one Java-level deadlock:
 Java stack information for the threads listed above:
 ===================================================
 "DeadlockCandidate-A":
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$deadlockFormation$1(ThreadDumpGenerator.java:1017)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$deadlockFormation$1(ThreadDumpGenerator.java:1017)
 	- waiting to lock <0x0000000504993df8> (a java.lang.Object)
 	- locked <0x0000000504993e00> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x000038000122f800.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x000038000122f800.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 "DeadlockCandidate-B":
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$deadlockFormation$2(ThreadDumpGenerator.java:1032)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$deadlockFormation$2(ThreadDumpGenerator.java:1032)
 	- waiting to lock <0x0000000504993e00> (a java.lang.Object)
 	- locked <0x0000000504993df8> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x000038000122fc00.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x000038000122fc00.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -698,24 +698,24 @@ Found one Java-level deadlock:
 Java stack information for the threads listed above:
 ===================================================
 "DeadlockThread-A":
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$1(ThreadDumpGenerator.java:537)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$1(ThreadDumpGenerator.java:537)
 	- waiting to lock <0x0000000512a010a8> (a java.lang.Object)
 	- locked <0x0000000512a010b0> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x0000380001233400.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x0000380001233400.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 "DeadlockThread-B":
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$2(ThreadDumpGenerator.java:553)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$2(ThreadDumpGenerator.java:553)
 	- waiting to lock <0x0000000512a01890> (a java.lang.Object)
 	- locked <0x0000000512a010a8> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x0000380001233800.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x0000380001233800.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 "DeadlockThread-C":
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$3(ThreadDumpGenerator.java:569)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$3(ThreadDumpGenerator.java:569)
 	- waiting to lock <0x0000000512a010b0> (a java.lang.Object)
 	- locked <0x0000000512a01890> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x0000380001233c00.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x0000380001233c00.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -732,17 +732,17 @@ Found one Java-level deadlock:
 Java stack information for the threads listed above:
 ===================================================
 "DeadlockCandidate-A":
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$deadlockFormation$1(ThreadDumpGenerator.java:1017)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$deadlockFormation$1(ThreadDumpGenerator.java:1017)
 	- waiting to lock <0x00000006b643c7b0> (a java.lang.Object)
 	- locked <0x00000006b643c7a8> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x000038000122f800.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x000038000122f800.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 "DeadlockCandidate-B":
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$deadlockFormation$2(ThreadDumpGenerator.java:1032)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$deadlockFormation$2(ThreadDumpGenerator.java:1032)
 	- waiting to lock <0x00000006b643c7a8> (a java.lang.Object)
 	- locked <0x00000006b643c7b0> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x000038000122fc00.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x000038000122fc00.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 
@@ -763,24 +763,24 @@ Found one Java-level deadlock:
 Java stack information for the threads listed above:
 ===================================================
 "DeadlockThread-A":
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$1(ThreadDumpGenerator.java:537)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$1(ThreadDumpGenerator.java:537)
 	- waiting to lock <0x00000006b40f02d8> (a java.lang.Object)
 	- locked <0x00000006b40f02d0> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x0000380001233400.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x0000380001233400.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 "DeadlockThread-B":
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$2(ThreadDumpGenerator.java:553)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$2(ThreadDumpGenerator.java:553)
 	- waiting to lock <0x00000006b40f02e0> (a java.lang.Object)
 	- locked <0x00000006b40f02d8> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x0000380001233800.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x0000380001233800.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 "DeadlockThread-C":
-	at me.bechberger.jstall.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$3(ThreadDumpGenerator.java:569)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.lambda$threeWayDeadlockScenario$3(ThreadDumpGenerator.java:569)
 	- waiting to lock <0x00000006b40f02d0> (a java.lang.Object)
 	- locked <0x00000006b40f02e0> (a java.lang.Object)
-	at me.bechberger.jstall.test.ThreadDumpGenerator$$Lambda/0x0000380001233c00.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda/0x0000380001233c00.run(Unknown Source)
 	at java.lang.Thread.runWith(java.base@25/Thread.java:1487)
 	at java.lang.Thread.run(java.base@25/Thread.java:1474)
 

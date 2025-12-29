@@ -37,12 +37,12 @@ _java_thread_list=0x00006000013d11a0, length=21, elements={
 	at java.util.stream.ReduceOps$ReduceOp.evaluateSequential(java.base@25/ReduceOps.java:921)
 	at java.util.stream.AbstractPipeline.evaluate(java.base@25/AbstractPipeline.java:265)
 	at java.util.stream.ReferencePipeline.collect(java.base@25/ReferencePipeline.java:723)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.captureThreadDump(ThreadDumpGenerator.java:1128)
-	at me.bechberger.jstall.test.scenarios.ScenarioRecorder.captureThreadDump(ScenarioRecorder.java:187)
-	at me.bechberger.jstall.test.scenarios.ScenarioRecorder.record(ScenarioRecorder.java:108)
-	at me.bechberger.jstall.test.scenarios.ScenarioRecorder.record(ScenarioRecorder.java:167)
-	at me.bechberger.jstall.test.scenarios.ScenarioBasedJfrTest.getOrRecordScenario(ScenarioBasedJfrTest.java:375)
-	at me.bechberger.jstall.test.scenarios.ScenarioBasedJfrTest.testCpuHotspotScenario(ScenarioBasedJfrTest.java:51)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.captureThreadDump(ThreadDumpGenerator.java:1128)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioRecorder.captureThreadDump(ScenarioRecorder.java:187)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioRecorder.record(ScenarioRecorder.java:108)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioRecorder.record(ScenarioRecorder.java:167)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioBasedJfrTest.getOrRecordScenario(ScenarioBasedJfrTest.java:375)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioBasedJfrTest.testCpuHotspotScenario(ScenarioBasedJfrTest.java:51)
 	at java.lang.invoke.LambdaForm$DMH/0x0000070001134c00.invokeVirtual(java.base@25/LambdaForm$DMH)
 	at java.lang.invoke.LambdaForm$MH/0x0000070001138400.invoke(java.base@25/LambdaForm$MH)
 	at java.lang.invoke.Invokers$Holder.invokeExact_MT(java.base@25/Invokers$Holder)
@@ -303,10 +303,10 @@ _java_thread_list=0x00006000013d11a0, length=21, elements={
 	at java.lang.Thread.sleepNanos0(java.base@25/Native Method)
 	at java.lang.Thread.sleepNanos(java.base@25/Thread.java:509)
 	at java.lang.Thread.sleep(java.base@25/Thread.java:540)
-	at me.bechberger.jstall.test.scenarios.TestScenarios$1.run(TestScenarios.java:46)
-	at me.bechberger.jstall.test.scenarios.ScenarioRecorder$$Lambda/0x000007000113ec00.run(Unknown Source)
-	at me.bechberger.jstall.test.scenarios.ScenarioRecorder.lambda$record$1(ScenarioRecorder.java:95)
-	at me.bechberger.jstall.test.scenarios.ScenarioRecorder$$Lambda/0x000007000113f800.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.scenarios.TestScenarios$1.run(TestScenarios.java:46)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioRecorder$$Lambda/0x000007000113ec00.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioRecorder.lambda$record$1(ScenarioRecorder.java:95)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioRecorder$$Lambda/0x000007000113f800.run(Unknown Source)
 	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@25/Executors.java:545)
 	at java.util.concurrent.FutureTask.run(java.base@25/FutureTask.java:328)
 	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@25/ThreadPoolExecutor.java:1090)
@@ -319,9 +319,9 @@ _java_thread_list=0x00006000013d11a0, length=21, elements={
 
 "pool-4-thread-1" #58 [39947] prio=5 os_prio=31 cpu=6215.83ms elapsed=6.30s allocated=88B defined_classes=0 tid=0x000000012d0a1a00 nid=39947 runnable  [0x000000016e996000]
    java.lang.Thread.State: RUNNABLE
-	at me.bechberger.jstall.test.scenarios.TestScenarios$1.hotMethod(TestScenarios.java:56)
-	at me.bechberger.jstall.test.scenarios.TestScenarios$1.lambda$run$0(TestScenarios.java:40)
-	at me.bechberger.jstall.test.scenarios.TestScenarios$1$$Lambda/0x00000700011dfc00.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.scenarios.TestScenarios$1.hotMethod(TestScenarios.java:56)
+	at me.bechberger.jthreaddump.test.scenarios.TestScenarios$1.lambda$run$0(TestScenarios.java:40)
+	at me.bechberger.jthreaddump.test.scenarios.TestScenarios$1$$Lambda/0x00000700011dfc00.run(Unknown Source)
 	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@25/Executors.java:545)
 	at java.util.concurrent.FutureTask.run(java.base@25/FutureTask.java:328)
 	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@25/ThreadPoolExecutor.java:1090)
@@ -334,9 +334,9 @@ _java_thread_list=0x00006000013d11a0, length=21, elements={
 
 "pool-4-thread-2" #59 [35851] prio=5 os_prio=31 cpu=6220.08ms elapsed=6.31s allocated=88B defined_classes=0 tid=0x000000014c899400 nid=35851 runnable  [0x000000016efba000]
    java.lang.Thread.State: RUNNABLE
-	at me.bechberger.jstall.test.scenarios.TestScenarios$1.hotMethod(TestScenarios.java:56)
-	at me.bechberger.jstall.test.scenarios.TestScenarios$1.lambda$run$0(TestScenarios.java:40)
-	at me.bechberger.jstall.test.scenarios.TestScenarios$1$$Lambda/0x00000700011dfc00.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.scenarios.TestScenarios$1.hotMethod(TestScenarios.java:56)
+	at me.bechberger.jthreaddump.test.scenarios.TestScenarios$1.lambda$run$0(TestScenarios.java:40)
+	at me.bechberger.jthreaddump.test.scenarios.TestScenarios$1$$Lambda/0x00000700011dfc00.run(Unknown Source)
 	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@25/Executors.java:545)
 	at java.util.concurrent.FutureTask.run(java.base@25/FutureTask.java:328)
 	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@25/ThreadPoolExecutor.java:1090)
@@ -349,9 +349,9 @@ _java_thread_list=0x00006000013d11a0, length=21, elements={
 
 "pool-4-thread-3" #60 [40715] prio=5 os_prio=31 cpu=6224.52ms elapsed=6.31s allocated=0B defined_classes=0 tid=0x000000012b83ea00 nid=40715 runnable  [0x000000016f1c6000]
    java.lang.Thread.State: RUNNABLE
-	at me.bechberger.jstall.test.scenarios.TestScenarios$1.hotMethod(TestScenarios.java:56)
-	at me.bechberger.jstall.test.scenarios.TestScenarios$1.lambda$run$0(TestScenarios.java:40)
-	at me.bechberger.jstall.test.scenarios.TestScenarios$1$$Lambda/0x00000700011dfc00.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.scenarios.TestScenarios$1.hotMethod(TestScenarios.java:56)
+	at me.bechberger.jthreaddump.test.scenarios.TestScenarios$1.lambda$run$0(TestScenarios.java:40)
+	at me.bechberger.jthreaddump.test.scenarios.TestScenarios$1$$Lambda/0x00000700011dfc00.run(Unknown Source)
 	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@25/Executors.java:545)
 	at java.util.concurrent.FutureTask.run(java.base@25/FutureTask.java:328)
 	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@25/ThreadPoolExecutor.java:1090)
@@ -364,9 +364,9 @@ _java_thread_list=0x00006000013d11a0, length=21, elements={
 
 "pool-4-thread-4" #61 [35595] prio=5 os_prio=31 cpu=6225.38ms elapsed=6.31s allocated=0B defined_classes=0 tid=0x000000014e369e00 nid=35595 runnable  [0x000000016f3d2000]
    java.lang.Thread.State: RUNNABLE
-	at me.bechberger.jstall.test.scenarios.TestScenarios$1.hotMethod(TestScenarios.java:56)
-	at me.bechberger.jstall.test.scenarios.TestScenarios$1.lambda$run$0(TestScenarios.java:40)
-	at me.bechberger.jstall.test.scenarios.TestScenarios$1$$Lambda/0x00000700011dfc00.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.scenarios.TestScenarios$1.hotMethod(TestScenarios.java:56)
+	at me.bechberger.jthreaddump.test.scenarios.TestScenarios$1.lambda$run$0(TestScenarios.java:40)
+	at me.bechberger.jthreaddump.test.scenarios.TestScenarios$1$$Lambda/0x00000700011dfc00.run(Unknown Source)
 	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@25/Executors.java:545)
 	at java.util.concurrent.FutureTask.run(java.base@25/FutureTask.java:328)
 	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@25/ThreadPoolExecutor.java:1090)

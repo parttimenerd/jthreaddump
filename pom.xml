@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>me.bechberger</groupId>
-    <artifactId>jstall</artifactId>
+    <artifactId>jthreaddump</artifactId>
     <version>0.1.0</version>
 
 
-    <name>jstall</name>
-    <url>https://github.com/parttimenerd/jstall</url>
+    <name>jthreaddump</name>
+    <url>https://github.com/parttimenerd/jthreaddump</url>
 
     <licenses>
         <license>
@@ -28,9 +28,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git@github.com:parttimenerd/jstall.git</connection>
-        <developerConnection>scm:git:https://github.com/parttimenerd/jstall.git</developerConnection>
-        <url>https://github.com/parttimenerd/jstall</url>
+        <connection>scm:git:git@github.com:parttimenerd/jthreaddump.git</connection>
+        <developerConnection>scm:git:https://github.com/parttimenerd/jthreaddump.git</developerConnection>
+        <url>https://github.com/parttimenerd/jthreaddump</url>
     </scm>
 
     <distributionManagement>
@@ -97,7 +97,7 @@
                     <appendAssemblyId>false</appendAssemblyId>
                     <archive>
                         <manifestEntries>
-                            <Main-Class>me.bechberger.jstall.Main</Main-Class>
+                            <Main-Class>me.bechberger.jthreaddump.Main</Main-Class>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -279,37 +279,10 @@
             <version>2.17.2</version>
         </dependency>
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.5.21</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.victools</groupId>
-            <artifactId>jsonschema-generator</artifactId>
-            <version>4.37.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.victools</groupId>
-            <artifactId>jsonschema-module-jackson</artifactId>
-            <version>4.37.0</version>
-        </dependency>
-        <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
             <version>26.0.2</version>
             <scope>compile</scope>
-        </dependency>
-        <!-- Handlebars.java for templating -->
-        <dependency>
-            <groupId>com.github.jknack</groupId>
-            <artifactId>handlebars</artifactId>
-            <version>4.4.0</version>
-        </dependency>
-        <!-- Jansi for ANSI color support -->
-        <dependency>
-            <groupId>org.fusesource.jansi</groupId>
-            <artifactId>jansi</artifactId>
-            <version>2.4.1</version>
         </dependency>
     </dependencies>
 

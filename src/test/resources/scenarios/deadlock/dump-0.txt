@@ -36,11 +36,11 @@ _java_thread_list=0x00006000001a73c0, length=19, elements={
 	at java.util.stream.ReduceOps$ReduceOp.evaluateSequential(java.base@25/ReduceOps.java:921)
 	at java.util.stream.AbstractPipeline.evaluate(java.base@25/AbstractPipeline.java:265)
 	at java.util.stream.ReferencePipeline.collect(java.base@25/ReferencePipeline.java:723)
-	at me.bechberger.jstall.test.ThreadDumpGenerator.captureThreadDump(ThreadDumpGenerator.java:1128)
-	at me.bechberger.jstall.test.scenarios.ScenarioRecorder.captureThreadDump(ScenarioRecorder.java:187)
-	at me.bechberger.jstall.test.scenarios.ScenarioRecorder.record(ScenarioRecorder.java:108)
-	at me.bechberger.jstall.test.scenarios.ScenarioRecorder.record(ScenarioRecorder.java:167)
-	at me.bechberger.jstall.test.scenarios.ScenarioIntegrationTest.testScenarioRecordsJfrData(ScenarioIntegrationTest.java:72)
+	at me.bechberger.jthreaddump.test.ThreadDumpGenerator.captureThreadDump(ThreadDumpGenerator.java:1128)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioRecorder.captureThreadDump(ScenarioRecorder.java:187)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioRecorder.record(ScenarioRecorder.java:108)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioRecorder.record(ScenarioRecorder.java:167)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioIntegrationTest.testScenarioRecordsJfrData(ScenarioIntegrationTest.java:72)
 	at java.lang.invoke.DirectMethodHandle$Holder.invokeVirtual(java.base@25/DirectMethodHandle$Holder)
 	at java.lang.invoke.LambdaForm$MH/0x000001c00115c800.invoke(java.base@25/LambdaForm$MH)
 	at java.lang.invoke.Invokers$Holder.invokeExact_MT(java.base@25/Invokers$Holder)
@@ -359,14 +359,14 @@ _java_thread_list=0x00006000001a73c0, length=19, elements={
 
 "C2 CompilerThread1" #20 [38407] daemon prio=9 os_prio=31 cpu=76.37ms elapsed=0.11s allocated=0B defined_classes=0 tid=0x0000000136109000 nid=38407 runnable  [0x0000000000000000]
    java.lang.Thread.State: RUNNABLE
-   Compiling: 3264 % !   4       me.bechberger.jstall.jfr.JfrParser::parse @ 55 (673 bytes)
+   Compiling: 3264 % !   4       me.bechberger.jthreaddump.jfr.JfrParser::parse @ 55 (673 bytes)
 
    Locked ownable synchronizers:
 	- None
 
 "C2 CompilerThread2" #21 [23815] daemon prio=9 os_prio=31 cpu=66.01ms elapsed=0.08s allocated=0B defined_classes=0 tid=0x0000000152666400 nid=23815 runnable  [0x0000000000000000]
    java.lang.Thread.State: RUNNABLE
-   Compiling: 3265 % !   4       me.bechberger.jstall.jfr.JfrParser::parseExecutionSample @ 86 (204 bytes)
+   Compiling: 3265 % !   4       me.bechberger.jthreaddump.jfr.JfrParser::parseExecutionSample @ 86 (204 bytes)
 
    Locked ownable synchronizers:
 	- None
@@ -376,10 +376,10 @@ _java_thread_list=0x00006000001a73c0, length=19, elements={
 	at java.lang.Thread.sleepNanos0(java.base@25/Native Method)
 	at java.lang.Thread.sleepNanos(java.base@25/Thread.java:509)
 	at java.lang.Thread.sleep(java.base@25/Thread.java:540)
-	at me.bechberger.jstall.test.scenarios.TestScenarios$9.run(TestScenarios.java:635)
-	at me.bechberger.jstall.test.scenarios.ScenarioRecorder$$Lambda/0x000001c001193800.run(Unknown Source)
-	at me.bechberger.jstall.test.scenarios.ScenarioRecorder.lambda$record$1(ScenarioRecorder.java:95)
-	at me.bechberger.jstall.test.scenarios.ScenarioRecorder$$Lambda/0x000001c001196400.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.scenarios.TestScenarios$9.run(TestScenarios.java:635)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioRecorder$$Lambda/0x000001c001193800.run(Unknown Source)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioRecorder.lambda$record$1(ScenarioRecorder.java:95)
+	at me.bechberger.jthreaddump.test.scenarios.ScenarioRecorder$$Lambda/0x000001c001196400.run(Unknown Source)
 	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@25/Executors.java:545)
 	at java.util.concurrent.FutureTask.run(java.base@25/FutureTask.java:328)
 	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@25/ThreadPoolExecutor.java:1090)
