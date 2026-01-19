@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## [0.3.2] - 2026-01-19
+
+### Added
 - ThreadInfoBuilder
 - Support for parsing carrier thread info
 

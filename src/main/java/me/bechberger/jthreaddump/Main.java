@@ -21,7 +21,7 @@ import java.util.concurrent.Callable;
 @Command(
         name = "jthreaddump",
         description = "Thread Dump Parser Library - Parse Java thread dumps from jstack/jcmd output",
-        version = "0.3.1",
+        version = "0.3.2",
         mixinStandardHelpOptions = true
 )
 public class Main implements Callable<Integer> {

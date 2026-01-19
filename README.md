@@ -81,7 +81,7 @@ jthreaddump dump.txt -v
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jthreaddump</artifactId>
-    <version>0.3.1</version>
+    <version>0.3.2</version>
 </dependency>
 ```
 
