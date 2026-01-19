@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.4.0] - 2026-01-19
+
+### Changed
+- Rewrote LockInfo to align it more closely with the thread dump structure
+
+### Removed
+- Removed `ThreadInfo#waitingOnLock`, but only constructor changes
+
 ## [0.3.2] - 2026-01-19
 
 ### Added
