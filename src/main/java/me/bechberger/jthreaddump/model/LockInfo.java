@@ -1,5 +1,6 @@
 package me.bechberger.jthreaddump.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
@@ -26,5 +27,10 @@ public record LockInfo(
         return java.util.Objects.equals(className, other.className) &&
                java.util.Objects.equals(lockType, other.lockType);
         // Intentionally ignore lockId (hex value)
+    }
+
+    @JsonIgnore
+    public boolean isWaitingOn() {
+        return "waiting on".equalsIgnoreCase(lockType);
     }
 }

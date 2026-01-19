@@ -19,20 +19,19 @@ class ModelSerializationTest {
 
     @Test
     void testThreadInfoJsonSerialization() throws Exception {
-        ThreadInfo thread = new ThreadInfo(
-                "test-thread",
-                1L,
-                0x2803L,
-                5,
-                false,
-                Thread.State.RUNNABLE,
-                100.0,
-                5000.0,
-                List.of(new StackFrame("com.example.Test", "method", "Test.java", 42)),
-                List.of(new LockInfo("0x123", "java.lang.Object", "locked")),
-                null,
-                null
-        );
+        ThreadInfo thread = ThreadInfoBuilder.create()
+                .name("test-thread")
+                .threadId(1L)
+                .nativeId(0x2803L)
+                .priority(5)
+                .daemon(false)
+                .state(Thread.State.RUNNABLE)
+                .cpuTimeSec(100.0)
+                .elapsedTimeSec(5000.0)
+                // Use individual addX methods for readability when adding frames/locks
+                .addStackFrame(new StackFrame("com.example.Test", "method", "Test.java", 42))
+                .addLock(new LockInfo("0x123", "java.lang.Object", "locked"))
+                .build();
 
         String json = jsonMapper.writeValueAsString(thread);
         assertNotNull(json);
@@ -51,10 +50,26 @@ class ModelSerializationTest {
                 Instant.now(),
                 "Test JVM",
                 List.of(
-                        new ThreadInfo("thread1", 1L, 0x100L, 5, false, Thread.State.RUNNABLE,
-                                100.0, 1000.0, List.of(), List.of(), null, null),
-                        new ThreadInfo("thread2", 2L, 0x200L, 5, true, Thread.State.WAITING,
-                                50.0, 2000.0, List.of(), List.of(), null, null)
+                        ThreadInfoBuilder.create()
+                                .name("thread1")
+                                .threadId(1L)
+                                .nativeId(0x100L)
+                                .priority(5)
+                                .daemon(false)
+                                .state(Thread.State.RUNNABLE)
+                                .cpuTimeSec(100.0)
+                                .elapsedTimeSec(1000.0)
+                                .build(),
+                        ThreadInfoBuilder.create()
+                                .name("thread2")
+                                .threadId(2L)
+                                .nativeId(0x200L)
+                                .priority(5)
+                                .daemon(true)
+                                .state(Thread.State.WAITING)
+                                .cpuTimeSec(50.0)
+                                .elapsedTimeSec(2000.0)
+                                .build()
                 ),
                 new JniInfo(100, 200, 1000L, 2000L),
                 "jstack"
@@ -78,8 +93,16 @@ class ModelSerializationTest {
                 Instant.now(),
                 "Test JVM",
                 List.of(
-                        new ThreadInfo("thread1", 1L, 0x100L, 5, false, Thread.State.RUNNABLE,
-                                100.0, 1000.0, List.of(), List.of(), null, null)
+                        ThreadInfoBuilder.create()
+                                .name("thread1")
+                                .threadId(1L)
+                                .nativeId(0x100L)
+                                .priority(5)
+                                .daemon(false)
+                                .state(Thread.State.RUNNABLE)
+                                .cpuTimeSec(100.0)
+                                .elapsedTimeSec(1000.0)
+                                .build()
                 ),
                 null,
                 "jstack"
@@ -142,20 +165,16 @@ class ModelSerializationTest {
 
     @Test
     void testNullFieldsNotIncluded() throws Exception {
-        ThreadInfo thread = new ThreadInfo(
-                "test",
-                null,  // threadId is null
-                null,  // nativeId is null
-                null,
-                null,
-                Thread.State.RUNNABLE,
-                null,  // cpuTimeSec is null
-                null,  // elapsedTimeSec is null
-                List.of(),
-                List.of(),
-                null,
-                null
-        );
+        ThreadInfo thread = ThreadInfoBuilder.create()
+                .name("test")
+                .threadId(null)
+                .nativeId(null)
+                .priority(null)
+                .daemon(null)
+                .state(Thread.State.RUNNABLE)
+                .cpuTimeSec(null)
+                .elapsedTimeSec(null)
+                .build();
 
         String json = jsonMapper.writeValueAsString(thread);
         // JsonInclude.Include.NON_NULL should exclude null fields

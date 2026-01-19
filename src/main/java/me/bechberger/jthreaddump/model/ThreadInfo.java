@@ -1,7 +1,10 @@
 package me.bechberger.jthreaddump.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Represents information about a single thread from a thread dump
@@ -19,12 +22,30 @@ public record ThreadInfo(
         List<StackFrame> stackTrace,
         List<LockInfo> locks,
         String waitingOnLock,
-        String additionalInfo
+        String additionalInfo,
+        Long carryingVirtualThreadId
 ) {
     public ThreadInfo {
         // Defensive copy for immutability
         stackTrace = stackTrace != null ? List.copyOf(stackTrace) : List.of();
         locks = locks != null ? List.copyOf(locks) : List.of();
+    }
+
+    // Backwards-compatible constructor: previous versions used a 12-arg constructor
+    // Keep this to avoid changing many test fixtures; it delegates to the canonical constructor
+    public ThreadInfo(String name,
+                      Long threadId,
+                      Long nativeId,
+                      Integer priority,
+                      Boolean daemon,
+                      Thread.State state,
+                      Double cpuTimeSec,
+                      Double elapsedTimeSec,
+                      List<StackFrame> stackTrace,
+                      List<LockInfo> locks,
+                      String waitingOnLock,
+                      String additionalInfo) {
+        this(name, threadId, nativeId, priority, daemon, state, cpuTimeSec, elapsedTimeSec, stackTrace, locks, waitingOnLock, additionalInfo, null);
     }
 
     /**
@@ -45,7 +66,8 @@ public record ThreadInfo(
                java.util.Objects.equals(stackTrace, other.stackTrace) &&
                locksEqualsIgnoringHexValues(locks, other.locks) &&
                // Intentionally ignore waitingOnLock (hex value)
-               java.util.Objects.equals(additionalInfo, other.additionalInfo);
+               java.util.Objects.equals(additionalInfo, other.additionalInfo) &&
+               java.util.Objects.equals(carryingVirtualThreadId, other.carryingVirtualThreadId);
     }
 
     private static boolean locksEqualsIgnoringHexValues(List<LockInfo> list1, List<LockInfo> list2) {
@@ -60,5 +82,17 @@ public record ThreadInfo(
             if (!lock1.equalsIgnoringHexValues(lock2)) return false;
         }
         return true;
+    }
+
+    @JsonIgnore
+    public Optional<LockInfo> getWaitedOnLock() {
+        List<LockInfo> locksList = this.locks.stream().filter(LockInfo::isWaitingOn).toList();
+        if (locksList.isEmpty()) {
+            return Optional.empty();
+        } if (locksList.size() == 1) {
+            return Optional.of(locksList.get(0));
+        } else {
+            throw new IllegalStateException("Multiple locks found with 'waiting on' status for thread: " + name);
+        }
     }
 }

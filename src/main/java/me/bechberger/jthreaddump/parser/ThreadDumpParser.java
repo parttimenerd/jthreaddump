@@ -22,9 +22,13 @@ public final class ThreadDumpParser {
 
     // Thread header patterns
     private static final Pattern THREAD_HEADER_PATTERN = Pattern.compile(
-            "\"([^\"]+)\"\\s+#(\\d+)(?:\\s+daemon)?(?:\\s+prio=(\\d+))?.*");
+            "\"([^\"]+)\"\\s+#(\\d+)(?:\\s+\\[(\\d+)\\])?(?:\\s+daemon)?(?:\\s+prio=(\\d+))?.*");
 
     private static final Pattern THREAD_HEADER_DAEMON = Pattern.compile(".*\\sdaemon\\s.*");
+
+    // Virtual thread pattern
+    private static final Pattern CARRYING_VIRTUAL_THREAD_PATTERN = Pattern.compile(
+            "\\s*Carrying virtual thread #(\\d+).*");
 
     // Thread state pattern
     private static final Pattern THREAD_STATE_PATTERN = Pattern.compile(
@@ -269,6 +273,9 @@ public final class ThreadDumpParser {
         if (pending.waitingOnLock != null && current.waitingOnLock == null) {
             current.waitingOnLock = pending.waitingOnLock;
         }
+        if (pending.carryingVirtualThreadId != null && current.carryingVirtualThreadId == null) {
+            current.carryingVirtualThreadId = pending.carryingVirtualThreadId;
+        }
         if (pending.additionalInfo != null) {
             if (current.additionalInfo == null) {
                 current.additionalInfo = pending.additionalInfo;
@@ -286,7 +293,9 @@ public final class ThreadDumpParser {
         if (headerMatcher.matches()) {
             builder.name = headerMatcher.group(1);
             builder.threadId = parseLongSafe(headerMatcher.group(2));
-            builder.priority = parseIntSafe(headerMatcher.group(3));
+            // Group 3 is the virtual thread ID in square brackets
+            builder.carryingVirtualThreadId = parseLongSafe(headerMatcher.group(3));
+            builder.priority = parseIntSafe(headerMatcher.group(4));
         } else {
             // Lenient: just extract the thread name from quotes
             int firstQuote = line.indexOf('"');
@@ -325,6 +334,13 @@ public final class ThreadDumpParser {
     }
 
     private static void parseThreadLine(String line, ThreadInfoBuilder builder) {
+        // Parse "Carrying virtual thread #XXX"
+        Matcher carryingMatcher = CARRYING_VIRTUAL_THREAD_PATTERN.matcher(line);
+        if (carryingMatcher.matches()) {
+            builder.carryingVirtualThreadId = parseLongSafe(carryingMatcher.group(1));
+            return;
+        }
+
         // Parse thread state
         Matcher stateMatcher = THREAD_STATE_PATTERN.matcher(line);
         if (stateMatcher.matches()) {
@@ -693,6 +709,7 @@ public final class ThreadDumpParser {
         List<LockInfo> locks = new ArrayList<>();
         String waitingOnLock;
         String additionalInfo;
+        Long carryingVirtualThreadId;
 
         ThreadInfo build() {
             return new ThreadInfo(
@@ -707,7 +724,8 @@ public final class ThreadDumpParser {
                     stackTrace,
                     locks,
                     waitingOnLock,
-                    additionalInfo
+                    additionalInfo,
+                    carryingVirtualThreadId
             );
         }
     }

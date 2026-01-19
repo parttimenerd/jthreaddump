@@ -65,9 +65,9 @@ class ThreadDumpParserTest {
         if (expected.deadlockInfos() != null || parsed.deadlockInfos() != null) {
             // Treat empty list as null
             List<DeadlockInfo> expDeadlocks = (expected.deadlockInfos() != null && !expected.deadlockInfos().isEmpty())
-                ? expected.deadlockInfos() : null;
+                    ? expected.deadlockInfos() : null;
             List<DeadlockInfo> prsDeadlocks = (parsed.deadlockInfos() != null && !parsed.deadlockInfos().isEmpty())
-                ? parsed.deadlockInfos() : null;
+                    ? parsed.deadlockInfos() : null;
 
             if (expDeadlocks == null && prsDeadlocks != null) {
                 error.append("Deadlocks: Expected=null, Parsed=").append(prsDeadlocks.size()).append(" deadlocks\n");
@@ -78,7 +78,7 @@ class ThreadDumpParserTest {
             } else if (expDeadlocks != null && prsDeadlocks != null) {
                 if (expDeadlocks.size() != prsDeadlocks.size()) {
                     error.append("Deadlock count mismatch: Expected=").append(expDeadlocks.size())
-                         .append(", Parsed=").append(prsDeadlocks.size()).append("\n");
+                            .append(", Parsed=").append(prsDeadlocks.size()).append("\n");
                     hasMismatch = true;
                 } else {
                     for (int i = 0; i < expDeadlocks.size(); i++) {
@@ -97,13 +97,13 @@ class ThreadDumpParserTest {
                                     error.append("    Thread ").append(j).append(" (").append(expThread.threadName()).append(") mismatch:\n");
                                     if (expThread.locks().size() != prsThread.locks().size()) {
                                         error.append("      Lock count: Expected=").append(expThread.locks().size())
-                                             .append(", Parsed=").append(prsThread.locks().size()).append("\n");
+                                                .append(", Parsed=").append(prsThread.locks().size()).append("\n");
                                         error.append("      Expected locks: ").append(expThread.locks()).append("\n");
                                         error.append("      Parsed locks: ").append(prsThread.locks()).append("\n");
                                     }
                                     if (expThread.stackTrace().size() != prsThread.stackTrace().size()) {
                                         error.append("      Stack size: Expected=").append(expThread.stackTrace().size())
-                                             .append(", Parsed=").append(prsThread.stackTrace().size()).append("\n");
+                                                .append(", Parsed=").append(prsThread.stackTrace().size()).append("\n");
                                     }
                                 }
                             }
@@ -116,7 +116,7 @@ class ThreadDumpParserTest {
 
         // Compare threads
         error.append("\nThread count: Expected=").append(expected.threads().size())
-             .append(", Parsed=").append(parsed.threads().size()).append("\n");
+                .append(", Parsed=").append(parsed.threads().size()).append("\n");
 
         if (expected.threads().size() != parsed.threads().size()) {
             hasMismatch = true;
@@ -134,33 +134,33 @@ class ThreadDumpParserTest {
 
                 if (!java.util.Objects.equals(exp.state(), prs.state())) {
                     error.append("  State: Expected=").append(exp.state())
-                         .append(", Parsed=").append(prs.state()).append("\n");
+                            .append(", Parsed=").append(prs.state()).append("\n");
                 }
 
                 if (!java.util.Objects.equals(exp.priority(), prs.priority())) {
                     error.append("  Priority: Expected=").append(exp.priority())
-                         .append(", Parsed=").append(prs.priority()).append("\n");
+                            .append(", Parsed=").append(prs.priority()).append("\n");
                 }
 
                 if (!java.util.Objects.equals(exp.daemon(), prs.daemon())) {
                     error.append("  Daemon: Expected=").append(exp.daemon())
-                         .append(", Parsed=").append(prs.daemon()).append("\n");
+                            .append(", Parsed=").append(prs.daemon()).append("\n");
                 }
 
                 if (!java.util.Objects.equals(exp.cpuTimeSec(), prs.cpuTimeSec())) {
                     error.append("  CPU time: Expected=").append(exp.cpuTimeSec())
-                         .append(", Parsed=").append(prs.cpuTimeSec()).append("\n");
+                            .append(", Parsed=").append(prs.cpuTimeSec()).append("\n");
                 }
 
                 if (!java.util.Objects.equals(exp.elapsedTimeSec(), prs.elapsedTimeSec())) {
                     error.append("  Elapsed time: Expected=").append(exp.elapsedTimeSec())
-                         .append(", Parsed=").append(prs.elapsedTimeSec()).append("\n");
+                            .append(", Parsed=").append(prs.elapsedTimeSec()).append("\n");
                 }
 
                 // Compare stack traces
                 if (!stackTracesEqual(exp.stackTrace(), prs.stackTrace())) {
                     error.append("  Stack trace mismatch (Expected=").append(exp.stackTrace().size())
-                         .append(", Parsed=").append(prs.stackTrace().size()).append("):\n");
+                            .append(", Parsed=").append(prs.stackTrace().size()).append("):\n");
 
                     int maxFrames = Math.max(exp.stackTrace().size(), prs.stackTrace().size());
                     for (int j = 0; j < maxFrames; j++) {
@@ -181,14 +181,14 @@ class ThreadDumpParserTest {
                 // Compare locks
                 if (exp.locks().size() != prs.locks().size() || !locksEqualIgnoringHex(exp.locks(), prs.locks())) {
                     error.append("  Locks mismatch (Expected=").append(exp.locks().size())
-                         .append(", Parsed=").append(prs.locks().size()).append("):\n");
+                            .append(", Parsed=").append(prs.locks().size()).append("):\n");
                     error.append("    Expected: ").append(exp.locks()).append("\n");
                     error.append("    Parsed:   ").append(prs.locks()).append("\n");
                 }
 
                 if (!java.util.Objects.equals(exp.additionalInfo(), prs.additionalInfo())) {
                     error.append("  Additional info: Expected=").append(exp.additionalInfo())
-                         .append(", Parsed=").append(prs.additionalInfo()).append("\n");
+                            .append(", Parsed=").append(prs.additionalInfo()).append("\n");
                 }
             }
         }
@@ -248,7 +248,7 @@ class ThreadDumpParserTest {
     @ParameterizedTest(name = "Parse {0}")
     @MethodSource("threadDumpProvider")
     void testParseThreadDump(String fileName, int expectedThreadCount, String expectedSource,
-                              boolean expectJniInfo, boolean expectJvmInfo) throws IOException {
+                             boolean expectJniInfo, boolean expectJvmInfo) throws IOException {
         String content = loadResource(fileName);
         ThreadDump dump = ThreadDumpParser.parse(content);
 
@@ -275,102 +275,88 @@ class ThreadDumpParserTest {
                 parsed.timestamp(),
                 "Full thread dump Java HotSpot(TM) 64-Bit Server VM (21.0.1+12-LTS-29 mixed mode, sharing):",
                 List.of(
-                        new ThreadInfo(
-                                "main",
-                                1L,
-                                0x2803L,
-                                5,
-                                null,
-                                Thread.State.RUNNABLE,
-                                0.1255,
-                                10.250,
-                                List.of(
+                        ThreadInfoBuilder.create()
+                                .name("main")
+                                .threadId(1L)
+                                .nativeId(0x2803L)
+                                .priority(5)
+                                .state(Thread.State.RUNNABLE)
+                                .cpuTimeSec(0.1255)
+                                .elapsedTimeSec(10.250)
+                                .stackTrace(
                                         new StackFrame("java.io.FileInputStream", "readBytes", null, null, true),
                                         new StackFrame("java.io.FileInputStream", "read", "FileInputStream.java", 276),
                                         new StackFrame("java.io.BufferedInputStream", "fill", "BufferedInputStream.java", 244),
                                         new StackFrame("com.example.Main", "readFile", "Main.java", 42)
-                                ),
-                                List.of(),
-                                null,
-                                null
-                        ),
-                        new ThreadInfo(
-                                "Reference Handler",
-                                2L,
-                                0x3003L,
-                                10,
-                                true,
-                                Thread.State.WAITING,
-                                0.0005,
-                                10.200,
-                                List.of(
+                                )
+                                .build(),
+                        ThreadInfoBuilder.create()
+                                .name("Reference Handler")
+                                .threadId(2L)
+                                .nativeId(0x3003L)
+                                .priority(10)
+                                .daemon(true)
+                                .state(Thread.State.WAITING)
+                                .cpuTimeSec(0.0005)
+                                .elapsedTimeSec(10.200)
+                                .stackTrace(
                                         new StackFrame("java.lang.ref.Reference", "waitForReferencePendingList", null, null, true),
                                         new StackFrame("java.lang.ref.Reference", "processPendingReferences", "Reference.java", 246),
                                         new StackFrame("java.lang.ref.Reference$ReferenceHandler", "run", "Reference.java", 208)
-                                ),
-                                List.of(),
-                                null,
-                                null
-                        ),
-                        new ThreadInfo(
-                                "Finalizer",
-                                3L,
-                                0x4803L,
-                                8,
-                                true,
-                                Thread.State.WAITING,
-                                0.00025,
-                                10.190,
-                                List.of(
+                                )
+                                .build(),
+                        ThreadInfoBuilder.create()
+                                .name("Finalizer")
+                                .threadId(3L)
+                                .nativeId(0x4803L)
+                                .priority(8)
+                                .daemon(true)
+                                .state(Thread.State.WAITING)
+                                .cpuTimeSec(0.00025)
+                                .elapsedTimeSec(10.190)
+                                .stackTrace(
                                         new StackFrame("java.lang.Object", "wait", null, null, true),
                                         new StackFrame("java.lang.ref.ReferenceQueue", "remove", "ReferenceQueue.java", 155),
                                         new StackFrame("java.lang.ref.ReferenceQueue", "remove", "ReferenceQueue.java", 176),
                                         new StackFrame("java.lang.ref.Finalizer$FinalizerThread", "run", "Finalizer.java", 172)
-                                ),
-                                List.of(
+                                )
+                                .locks(
                                         new LockInfo("0x00000007ffc00000", "java.lang.ref.ReferenceQueue$Lock", "waiting on"),
                                         new LockInfo("0x00000007ffc00000", "java.lang.ref.ReferenceQueue$Lock", "locked")
-                                ),
-                                "0x00000007ffc00000",
-                                null
-                        ),
-                        new ThreadInfo(
-                                "Worker-1",
-                                10L,
-                                0x5803L,
-                                5,
-                                null,
-                                Thread.State.RUNNABLE,
-                                2.500,
-                                8.500,
-                                List.of(
+                                )
+                                .waitingOnLock("0x00000007ffc00000")
+                                .build(),
+                        ThreadInfoBuilder.create()
+                                .name("Worker-1")
+                                .threadId(10L)
+                                .nativeId(0x5803L)
+                                .priority(5)
+                                .state(Thread.State.RUNNABLE)
+                                .cpuTimeSec(2.500)
+                                .elapsedTimeSec(8.500)
+                                .stackTrace(
                                         new StackFrame("java.net.SocketInputStream", "socketRead0", null, null, true),
                                         new StackFrame("java.net.SocketInputStream", "read", "SocketInputStream.java", 186),
                                         new StackFrame("com.example.Worker", "processRequest", "Worker.java", 67)
-                                ),
-                                List.of(),
-                                null,
-                                null
-                        ),
-                        new ThreadInfo(
-                                "Worker-2",
-                                11L,
-                                0x6003L,
-                                5,
-                                null,
-                                Thread.State.BLOCKED,
-                                0.0,
-                                8.4500,
-                                List.of(
+                                )
+                                .build(),
+                        ThreadInfoBuilder.create()
+                                .name("Worker-2")
+                                .threadId(11L)
+                                .nativeId(0x6003L)
+                                .priority(5)
+                                .state(Thread.State.BLOCKED)
+                                .cpuTimeSec(0.0)
+                                .elapsedTimeSec(8.4500)
+                                .stackTrace(
                                         new StackFrame("com.example.Worker", "processRequest", "Worker.java", 45),
                                         new StackFrame("com.example.Worker", "run", "Worker.java", 30)
-                                ),
-                                List.of(
+                                )
+                                .locks(
                                         new LockInfo("0x00000007ffc12345", "java.lang.Object", "waiting on")
-                                ),
-                                "0x00000007ffc12345",
-                                null
-                        )
+                                )
+                                .waitingOnLock("0x00000007ffc12345")
+                                .build()
                 ),
                 new JniInfo(247, 3181, 3363L, 70049L),
                 "jstack",
@@ -389,46 +375,38 @@ class ThreadDumpParserTest {
                 parsed.timestamp(), // Use parsed timestamp
                 null,
                 List.of(
-                        new ThreadInfo(
-                                "Thread-A",
-                                0x1000L,
-                                0x1000L,
-                                5,
-                                null,
-                                Thread.State.BLOCKED,
-                                null,
-                                null,
-                                List.of(
+                        ThreadInfoBuilder.create()
+                                .name("Thread-A")
+                                .threadId(0x1000L)
+                                .nativeId(0x1000L)
+                                .priority(5)
+                                .state(Thread.State.BLOCKED)
+                                .stackTrace(
                                         new StackFrame("com.example.DeadlockExample", "methodA", "DeadlockExample.java", 20),
                                         new StackFrame("com.example.DeadlockExample", "run", "DeadlockExample.java", 10)
-                                ),
-                                List.of(
+                                )
+                                .locks(
                                         new LockInfo("0x00000007ffc11111", "java.lang.Object", "waiting on"),
                                         new LockInfo("0x00000007ffc22222", "java.lang.Object", "locked")
-                                ),
-                                "0x00000007ffc11111",
-                                null
-                        ),
-                        new ThreadInfo(
-                                "Thread-B",
-                                0x2000L,
-                                0x2000L,
-                                5,
-                                null,
-                                Thread.State.BLOCKED,
-                                null,
-                                null,
-                                List.of(
+                                )
+                                .waitingOnLock("0x00000007ffc11111")
+                                .build(),
+                        ThreadInfoBuilder.create()
+                                .name("Thread-B")
+                                .threadId(0x2000L)
+                                .nativeId(0x2000L)
+                                .priority(5)
+                                .state(Thread.State.BLOCKED)
+                                .stackTrace(
                                         new StackFrame("com.example.DeadlockExample", "methodB", "DeadlockExample.java", 30),
                                         new StackFrame("com.example.DeadlockExample", "run", "DeadlockExample.java", 15)
-                                ),
-                                List.of(
+                                )
+                                .locks(
                                         new LockInfo("0x00000007ffc22222", "java.lang.Object", "waiting on"),
                                         new LockInfo("0x00000007ffc11111", "java.lang.Object", "locked")
-                                ),
-                                "0x00000007ffc22222",
-                                null
-                        )
+                                )
+                                .waitingOnLock("0x00000007ffc22222")
+                                .build()
                 ),
                 null,
                 "unknown",
@@ -451,7 +429,7 @@ class ThreadDumpParserTest {
         // Extract just the 5 scenario threads for comparison (ignore system threads)
         List<ThreadInfo> scenarioThreads = parsed.threads().stream()
                 .filter(t -> t.name() != null &&
-                        (t.name().startsWith("DeadlockThread-") || t.name().equals("WorkerThread-1")))
+                             (t.name().startsWith("DeadlockThread-") || t.name().equals("WorkerThread-1")))
                 .sorted((a, b) -> a.name().compareTo(b.name()))
                 .toList();
 
@@ -460,104 +438,68 @@ class ThreadDumpParserTest {
                 parsed.timestamp(), // Only use parsed for timestamp
                 "Full thread dump Java HotSpot(TM) 64-Bit Server VM (21.0.1+12-LTS-29 mixed mode, sharing):",
                 List.of(
-                        new ThreadInfo(
-                                "DeadlockThread-A",
-                                null, // Ignored by custom equals
-                                null, // Ignored by custom equals
-                                5,    // priority from dump
-                                null,
-                                Thread.State.BLOCKED,
-                                null, // no cpu time in dump
-                                null, // no elapsed time in dump
-                                List.of(
+                        ThreadInfoBuilder.create()
+                                .name("DeadlockThread-A")
+                                .priority(5)
+                                .state(Thread.State.BLOCKED)
+                                .stackTrace(
                                         new StackFrame("me.bechberger.jthreaddump.test.ThreadDumpGenerator", "lambda$multiDeadlockScenario$10", "ThreadDumpGenerator.java", 632),
                                         new StackFrame("me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda", "run", null, null)
-                                ),
-                                List.of(
+                                )
+                                .locks(
                                         new LockInfo(null, "java.lang.Object", "waiting on"),
                                         new LockInfo(null, "java.lang.Object", "locked")
-                                ),
-                                null,
-                                null
-                        ),
-                        new ThreadInfo(
-                                "DeadlockThread-B",
-                                null,
-                                null,
-                                5,
-                                null,
-                                Thread.State.BLOCKED,
-                                null,
-                                null,
-                                List.of(
+                                )
+                                .build(),
+                        ThreadInfoBuilder.create()
+                                .name("DeadlockThread-B")
+                                .priority(5)
+                                .state(Thread.State.BLOCKED)
+                                .stackTrace(
                                         new StackFrame("me.bechberger.jthreaddump.test.ThreadDumpGenerator", "lambda$multiDeadlockScenario$11", "ThreadDumpGenerator.java", 648),
                                         new StackFrame("me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda", "run", null, null)
-                                ),
-                                List.of(
+                                )
+                                .locks(
                                         new LockInfo(null, "java.lang.Object", "waiting on"),
                                         new LockInfo(null, "java.lang.Object", "locked")
-                                ),
-                                null,
-                                null
-                        ),
-                        new ThreadInfo(
-                                "DeadlockThread-C",
-                                null,
-                                null,
-                                5,
-                                null,
-                                Thread.State.BLOCKED,
-                                null,
-                                null,
-                                List.of(
+                                )
+                                .build(),
+                        ThreadInfoBuilder.create()
+                                .name("DeadlockThread-C")
+                                .priority(5)
+                                .state(Thread.State.BLOCKED)
+                                .stackTrace(
                                         new StackFrame("me.bechberger.jthreaddump.test.ThreadDumpGenerator", "lambda$multiDeadlockScenario$12", "ThreadDumpGenerator.java", 664),
                                         new StackFrame("me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda", "run", null, null)
-                                ),
-                                List.of(
+                                )
+                                .locks(
                                         new LockInfo(null, "java.lang.Object", "waiting on"),
                                         new LockInfo(null, "java.lang.Object", "locked")
-                                ),
-                                null,
-                                null
-                        ),
-                        new ThreadInfo(
-                                "DeadlockThread-D",
-                                null,
-                                null,
-                                5,
-                                null,
-                                Thread.State.BLOCKED,
-                                null,
-                                null,
-                                List.of(
+                                )
+                                .build(),
+                        ThreadInfoBuilder.create()
+                                .name("DeadlockThread-D")
+                                .priority(5)
+                                .state(Thread.State.BLOCKED)
+                                .stackTrace(
                                         new StackFrame("me.bechberger.jthreaddump.test.ThreadDumpGenerator", "lambda$multiDeadlockScenario$13", "ThreadDumpGenerator.java", 680),
                                         new StackFrame("me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda", "run", null, null)
-                                ),
-                                List.of(
+                                )
+                                .locks(
                                         new LockInfo(null, "java.lang.Object", "waiting on"),
                                         new LockInfo(null, "java.lang.Object", "locked")
-                                ),
-                                null,
-                                null
-                        ),
-                        new ThreadInfo(
-                                "WorkerThread-1",
-                                null,
-                                null,
-                                5,
-                                null,
-                                Thread.State.RUNNABLE,  // RUNNABLE in the actual dump
-                                null,
-                                null,
-                                List.of(
+                                )
+                                .build(),
+                        ThreadInfoBuilder.create()
+                                .name("WorkerThread-1")
+                                .priority(5)
+                                .state(Thread.State.RUNNABLE)
+                                .stackTrace(
                                         new StackFrame("java.lang.Math", "sqrt", null, null, true),
                                         new StackFrame("me.bechberger.jthreaddump.test.ThreadDumpGenerator", "lambda$multiDeadlockScenario$14", "ThreadDumpGenerator.java", 695),
                                         new StackFrame("me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda", "run", null, null)
-                                ),
-                                List.of(),
-                                null,
-                                null
-                        )
+                                )
+                                .build()
                 ),
                 new JniInfo(120, null, null, null),  // 120 global refs in dump
                 "jstack",
@@ -586,20 +528,10 @@ class ThreadDumpParserTest {
                 parsed.timestamp(),
                 null,
                 List.of(
-                        new ThreadInfo(
-                                "Minimal-Thread",
-                                0x1L,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                List.of(),
-                                List.of(),
-                                null,
-                                null
-                        )
+                        ThreadInfoBuilder.create()
+                                .name("Minimal-Thread")
+                                .threadId(0x1L)
+                                .build()
                 ),
                 null,
                 "unknown"
@@ -617,65 +549,38 @@ class ThreadDumpParserTest {
                 parsed.timestamp(),
                 "Thread dump from jcmd 12345 Thread.print:",
                 List.of(
-                        new ThreadInfo(
-                                "main",
-                                1L,
-                                0x2803L,
-                                5,
-                                null,
-                                Thread.State.RUNNABLE,
-                                null,
-                                null,
-                                List.of(
+                        ThreadInfoBuilder.create()
+                                .name("main")
+                                .threadId(1L)
+                                .nativeId(0x2803L)
+                                .priority(5)
+                                .state(Thread.State.RUNNABLE)
+                                .stackTrace(
                                         new StackFrame("java.io.FileInputStream", "readBytes", null, null, true),
                                         new StackFrame("java.io.FileInputStream", "read", "FileInputStream.java", 276)
-                                ),
-                                List.of(),
-                                null,
-                                null
-                        ),
-                        new ThreadInfo(
-                                "GC Thread#0",
-                                2L,
-                                0x3003L,
-                                10,
-                                true,
-                                null,
-                                null,
-                                null,
-                                List.of(),
-                                List.of(),
-                                null,
-                                null
-                        ),
-                        new ThreadInfo(
-                                "VM Thread",
-                                3L,
-                                0x4803L,
-                                10,
-                                true,
-                                null,
-                                null,
-                                null,
-                                List.of(),
-                                List.of(),
-                                null,
-                                null
-                        ),
-                        new ThreadInfo(
-                                "Service Thread",
-                                4L,
-                                0x5003L,
-                                9,
-                                true,
-                                null,
-                                null,
-                                null,
-                                List.of(),
-                                List.of(),
-                                null,
-                                null
-                        )
+                                )
+                                .build(),
+                        ThreadInfoBuilder.create()
+                                .name("GC Thread#0")
+                                .threadId(2L)
+                                .nativeId(0x3003L)
+                                .priority(10)
+                                .daemon(true)
+                                .build(),
+                        ThreadInfoBuilder.create()
+                                .name("VM Thread")
+                                .threadId(3L)
+                                .nativeId(0x4803L)
+                                .priority(10)
+                                .daemon(true)
+                                .build(),
+                        ThreadInfoBuilder.create()
+                                .name("Service Thread")
+                                .threadId(4L)
+                                .nativeId(0x5003L)
+                                .priority(9)
+                                .daemon(true)
+                                .build()
                 ),
                 new JniInfo(150, null, null, null),
                 "jcmd"
@@ -706,22 +611,13 @@ class ThreadDumpParserTest {
                 parsed.timestamp(),
                 null,
                 List.of(
-                        new ThreadInfo(
-                                "Weird-Thread",
-                                null,
-                                null,
-                                null,
-                                null,
-                                Thread.State.RUNNABLE,
-                                null,
-                                null,
-                                List.of(
-                                        new StackFrame("some.Class", "method", null, null)
-                                ),
-                                List.of(),
-                                null,
-                                null
-                        )
+                        ThreadInfoBuilder.create()
+                                .name("Weird-Thread")
+                                .state(Thread.State.RUNNABLE)
+                                .stackTrace(
+                                        new StackFrame("some.Class", "method", null, null, null)
+                                )
+                                .build()
                 ),
                 null,
                 "unknown"
@@ -810,25 +706,17 @@ class ThreadDumpParserTest {
                 parsed.timestamp(),
                 null,
                 List.of(
-                        new ThreadInfo(
-                                "Test",
-                                1L,
-                                null,
-                                null,
-                                null,
-                                Thread.State.RUNNABLE,
-                                null,
-                                null,
-                                List.of(
+                        ThreadInfoBuilder.create()
+                                .name("Test")
+                                .threadId(1L)
+                                .state(Thread.State.RUNNABLE)
+                                .stackTrace(
                                         new StackFrame("com.example.Test", "method1", "Test.java", 10),
                                         new StackFrame("com.example.Test", "method2", null, null, true),
                                         new StackFrame("com.example.Test", "method3", null, null),
                                         new StackFrame("com.example.Test", "method4", "Test.java", null)
-                                ),
-                                List.of(),
-                                null,
-                                null
-                        )
+                                )
+                                .build()
                 ),
                 null,
                 "unknown",

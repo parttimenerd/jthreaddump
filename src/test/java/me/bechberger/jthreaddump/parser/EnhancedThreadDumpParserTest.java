@@ -1,8 +1,7 @@
 package me.bechberger.jthreaddump.parser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import me.bechberger.jthreaddump.model.ThreadDump;
-import me.bechberger.jthreaddump.model.ThreadInfo;
+import me.bechberger.jthreaddump.model.*;
 import me.bechberger.jthreaddump.test.ThreadDumpGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,7 +11,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,7 +37,7 @@ class EnhancedThreadDumpParserTest {
     @ParameterizedTest(name = "Real-world scenario: {0}")
     @MethodSource("realWorldScenarios")
     void testRealWorldScenarios(String scenarioName, ThreadDumpGenerator.ThreadDumpScenario scenario,
-                                 int minExpectedThreads, boolean expectLocks) throws IOException {
+                                int minExpectedThreads, boolean expectLocks) throws IOException {
         // Get or generate cached dump
         Path dumpFile = ThreadDumpGenerator.getOrGenerateThreadDump(scenarioName, scenario);
         assertTrue(Files.exists(dumpFile), "Dump file should exist");
@@ -196,24 +194,20 @@ class EnhancedThreadDumpParserTest {
 
         ThreadDump dump = ThreadDumpParser.parse(threadDump);
 
-        // Build expected structure
-        ThreadInfo expectedThread = new ThreadInfo(
-                "SimpleThread",
-                42L,
-                0x2000L,
-                5,
-                null,  // daemon should be null when not explicitly set
-                Thread.State.RUNNABLE,
-                0.100,
-                5.000,
-                List.of(
-                        new me.bechberger.jthreaddump.model.StackFrame("com.example.Main", "main", "Main.java", 10),
-                        new me.bechberger.jthreaddump.model.StackFrame("com.example.Main", "run", "Main.java", 5)
-                ),
-                List.of(),
-                null,
-                null
-        );
+        // Build expected structure using builder for readability
+        ThreadInfo expectedThread = ThreadInfoBuilder.create()
+                .name("SimpleThread")
+                .threadId(42L)
+                .nativeId(0x2000L)
+                .priority(5)
+                .state(Thread.State.RUNNABLE)
+                .cpuTimeSec(0.100)
+                .elapsedTimeSec(5.000)
+                .stackTrace(
+                        new StackFrame("com.example.Main", "main", "Main.java", 10),
+                        new StackFrame("com.example.Main", "run", "Main.java", 5)
+                )
+                .build();
 
         assertEquals(1, dump.threads().size());
         ThreadInfo actualThread = dump.threads().get(0);
@@ -240,26 +234,22 @@ class EnhancedThreadDumpParserTest {
 
         ThreadDump dump = ThreadDumpParser.parse(threadDump);
 
-        // Build expected structure
-        ThreadInfo expectedThread = new ThreadInfo(
-                "LockedThread",
-                10L,
-                0x2000L,
-                5,
-                null,  // daemon should be null when not explicitly set
-                Thread.State.BLOCKED,
-                null,
-                null,
-                List.of(
-                        new me.bechberger.jthreaddump.model.StackFrame("com.example.Test", "method", "Test.java", 20)
-                ),
-                List.of(
-                        new me.bechberger.jthreaddump.model.LockInfo("0xdeadbeef", "java.lang.Object", "waiting on"),
-                        new me.bechberger.jthreaddump.model.LockInfo("0xcafebabe", "java.lang.String", "locked")
-                ),
-                "0xdeadbeef",
-                null
-        );
+        // Build expected structure using builder
+        ThreadInfo expectedThread = ThreadInfoBuilder.create()
+                .name("LockedThread")
+                .threadId(10L)
+                .nativeId(0x2000L)
+                .priority(5)
+                .state(Thread.State.BLOCKED)
+                .stackTrace(
+                        new StackFrame("com.example.Test", "method", "Test.java", 20)
+                )
+                .locks(
+                        new LockInfo("0xdeadbeef", "java.lang.Object", "waiting on"),
+                        new LockInfo("0xcafebabe", "java.lang.String", "locked")
+                )
+                .waitingOnLock("0xdeadbeef")
+                .build();
 
         assertEquals(1, dump.threads().size());
         ThreadInfo actualThread = dump.threads().get(0);
@@ -340,7 +330,7 @@ class EnhancedThreadDumpParserTest {
         // Verify we can find virtual threads (either by name or as carriers)
         long virtualOrCarrierCount = dump.threads().stream()
                 .filter(t -> t.name() != null &&
-                        (t.name().contains("Virtual") || t.name().contains("ForkJoinPool")))
+                             (t.name().contains("Virtual") || t.name().contains("ForkJoinPool")))
                 .count();
 
         assertTrue(virtualOrCarrierCount > 0,
