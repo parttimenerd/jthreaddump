@@ -321,10 +321,9 @@ class ThreadDumpParserTest {
                                         new StackFrame("java.lang.ref.Finalizer$FinalizerThread", "run", "Finalizer.java", 172)
                                 )
                                 .locks(
-                                        new LockInfo("0x00000007ffc00000", "java.lang.ref.ReferenceQueue$Lock", "waiting on"),
-                                        new LockInfo("0x00000007ffc00000", "java.lang.ref.ReferenceQueue$Lock", "locked")
+                                        new LockInfo("0x00000007ffc00000", "java.lang.ref.ReferenceQueue$Lock", LockInfo.LockOperation.WAITING_ON),
+                                        new LockInfo("0x00000007ffc00000", "java.lang.ref.ReferenceQueue$Lock", LockInfo.LockOperation.LOCKED)
                                 )
-                                .waitingOnLock("0x00000007ffc00000")
                                 .build(),
                         ThreadInfoBuilder.create()
                                 .name("Worker-1")
@@ -353,9 +352,8 @@ class ThreadDumpParserTest {
                                         new StackFrame("com.example.Worker", "run", "Worker.java", 30)
                                 )
                                 .locks(
-                                        new LockInfo("0x00000007ffc12345", "java.lang.Object", "waiting on")
+                                        new LockInfo("0x00000007ffc12345", "java.lang.Object", LockInfo.LockOperation.WAITING_TO_LOCK)
                                 )
-                                .waitingOnLock("0x00000007ffc12345")
                                 .build()
                 ),
                 new JniInfo(247, 3181, 3363L, 70049L),
@@ -386,10 +384,9 @@ class ThreadDumpParserTest {
                                         new StackFrame("com.example.DeadlockExample", "run", "DeadlockExample.java", 10)
                                 )
                                 .locks(
-                                        new LockInfo("0x00000007ffc11111", "java.lang.Object", "waiting on"),
-                                        new LockInfo("0x00000007ffc22222", "java.lang.Object", "locked")
+                                        new LockInfo("0x00000007ffc11111", "java.lang.Object", LockInfo.LockOperation.WAITING_TO_LOCK),
+                                        new LockInfo("0x00000007ffc22222", "java.lang.Object", LockInfo.LockOperation.LOCKED)
                                 )
-                                .waitingOnLock("0x00000007ffc11111")
                                 .build(),
                         ThreadInfoBuilder.create()
                                 .name("Thread-B")
@@ -402,10 +399,9 @@ class ThreadDumpParserTest {
                                         new StackFrame("com.example.DeadlockExample", "run", "DeadlockExample.java", 15)
                                 )
                                 .locks(
-                                        new LockInfo("0x00000007ffc22222", "java.lang.Object", "waiting on"),
-                                        new LockInfo("0x00000007ffc11111", "java.lang.Object", "locked")
+                                        new LockInfo("0x00000007ffc22222", "java.lang.Object", LockInfo.LockOperation.WAITING_TO_LOCK),
+                                        new LockInfo("0x00000007ffc11111", "java.lang.Object", LockInfo.LockOperation.LOCKED)
                                 )
-                                .waitingOnLock("0x00000007ffc22222")
                                 .build()
                 ),
                 null,
@@ -447,8 +443,8 @@ class ThreadDumpParserTest {
                                         new StackFrame("me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda", "run", null, null)
                                 )
                                 .locks(
-                                        new LockInfo(null, "java.lang.Object", "waiting on"),
-                                        new LockInfo(null, "java.lang.Object", "locked")
+                                        new LockInfo(null, "java.lang.Object", LockInfo.LockOperation.WAITING_TO_LOCK),
+                                        new LockInfo(null, "java.lang.Object", LockInfo.LockOperation.LOCKED)
                                 )
                                 .build(),
                         ThreadInfoBuilder.create()
@@ -460,8 +456,8 @@ class ThreadDumpParserTest {
                                         new StackFrame("me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda", "run", null, null)
                                 )
                                 .locks(
-                                        new LockInfo(null, "java.lang.Object", "waiting on"),
-                                        new LockInfo(null, "java.lang.Object", "locked")
+                                        new LockInfo(null, "java.lang.Object", LockInfo.LockOperation.WAITING_TO_LOCK),
+                                        new LockInfo(null, "java.lang.Object", LockInfo.LockOperation.LOCKED)
                                 )
                                 .build(),
                         ThreadInfoBuilder.create()
@@ -473,8 +469,8 @@ class ThreadDumpParserTest {
                                         new StackFrame("me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda", "run", null, null)
                                 )
                                 .locks(
-                                        new LockInfo(null, "java.lang.Object", "waiting on"),
-                                        new LockInfo(null, "java.lang.Object", "locked")
+                                        new LockInfo(null, "java.lang.Object", LockInfo.LockOperation.WAITING_TO_LOCK),
+                                        new LockInfo(null, "java.lang.Object", LockInfo.LockOperation.LOCKED)
                                 )
                                 .build(),
                         ThreadInfoBuilder.create()
@@ -486,8 +482,8 @@ class ThreadDumpParserTest {
                                         new StackFrame("me.bechberger.jthreaddump.test.ThreadDumpGenerator$$Lambda", "run", null, null)
                                 )
                                 .locks(
-                                        new LockInfo(null, "java.lang.Object", "waiting on"),
-                                        new LockInfo(null, "java.lang.Object", "locked")
+                                        new LockInfo(null, "java.lang.Object", LockInfo.LockOperation.WAITING_TO_LOCK),
+                                        new LockInfo(null, "java.lang.Object", LockInfo.LockOperation.LOCKED)
                                 )
                                 .build(),
                         ThreadInfoBuilder.create()

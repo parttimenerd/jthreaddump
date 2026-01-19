@@ -18,7 +18,6 @@ public final class ThreadInfoBuilder {
     private Double elapsedTimeSec;
     private final List<StackFrame> stackTrace = new ArrayList<>();
     private final List<LockInfo> locks = new ArrayList<>();
-    private String waitingOnLock;
     private String additionalInfo;
     private Long carryingVirtualThreadId;
 
@@ -41,7 +40,6 @@ public final class ThreadInfoBuilder {
         b.elapsedTimeSec = other.elapsedTimeSec();
         if (other.stackTrace() != null) b.stackTrace.addAll(other.stackTrace());
         if (other.locks() != null) b.locks.addAll(other.locks());
-        b.waitingOnLock = other.waitingOnLock();
         b.additionalInfo = other.additionalInfo();
         b.carryingVirtualThreadId = other.carryingVirtualThreadId();
         return b;
@@ -94,7 +92,6 @@ public final class ThreadInfoBuilder {
         return this;
     }
 
-    public ThreadInfoBuilder waitingOnLock(String waitingOnLock) { this.waitingOnLock = waitingOnLock; return this; }
     public ThreadInfoBuilder additionalInfo(String additionalInfo) { this.additionalInfo = additionalInfo; return this; }
     public ThreadInfoBuilder carryingVirtualThreadId(Long carryingVirtualThreadId) { this.carryingVirtualThreadId = carryingVirtualThreadId; return this; }
 
@@ -113,7 +110,6 @@ public final class ThreadInfoBuilder {
                 elapsedTimeSec,
                 frames,
                 locks,
-                waitingOnLock,
                 additionalInfo,
                 carryingVirtualThreadId
         );

@@ -30,7 +30,7 @@ class ModelSerializationTest {
                 .elapsedTimeSec(5000.0)
                 // Use individual addX methods for readability when adding frames/locks
                 .addStackFrame(new StackFrame("com.example.Test", "method", "Test.java", 42))
-                .addLock(new LockInfo("0x123", "java.lang.Object", "locked"))
+                .addLock(new LockInfo("0x123", "java.lang.Object", LockInfo.LockOperation.LOCKED))
                 .build();
 
         String json = jsonMapper.writeValueAsString(thread);
@@ -137,17 +137,17 @@ class ModelSerializationTest {
 
     @Test
     void testLockInfoSerialization() throws Exception {
-        LockInfo lock = new LockInfo("0x12345", "java.lang.Object", "locked");
+        LockInfo lock = new LockInfo("0x12345", "java.lang.Object", LockInfo.LockOperation.LOCKED);
 
         String json = jsonMapper.writeValueAsString(lock);
         assertTrue(json.contains("0x12345"));
         assertTrue(json.contains("java.lang.Object"));
-        assertTrue(json.contains("locked"));
+        assertTrue(json.contains("LOCKED"));
 
         LockInfo deserialized = jsonMapper.readValue(json, LockInfo.class);
         assertEquals(lock.lockId(), deserialized.lockId());
         assertEquals(lock.className(), deserialized.className());
-        assertEquals(lock.lockType(), deserialized.lockType());
+        assertEquals(lock.operation(), deserialized.operation());
     }
 
     @Test

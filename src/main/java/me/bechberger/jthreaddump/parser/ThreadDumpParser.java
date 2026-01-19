@@ -60,7 +60,7 @@ public final class ThreadDumpParser {
             "-\\s+locked\\s+<(0x[0-9a-fA-F]+)>\\s+\\(a\\s+([^)]+)\\).*");
 
     private static final Pattern PARKING_PATTERN = Pattern.compile(
-            "-\\s+parking to wait for\\s+<(0x[0-9a-fA-F]+)>\\s+\\(a\\s+([^)]+)\\).*");
+            "-\\s+parking to wait for\\s+<(0x[0-9a-fA-F]+)>\\s+\\(a\\s+([^)]+)\\)(?:,\\s+owner\\s+#(\\d+))?.*");
 
     // JNI info pattern
     private static final Pattern JNI_PATTERN = Pattern.compile(
@@ -207,7 +207,7 @@ public final class ThreadDumpParser {
                 // Try to parse state, stack frames, or lock info
                 if (couldBeThreadInfo(line)) {
                     if (pendingInfo == null) {
-                        pendingInfo = new ThreadInfoBuilder();
+                        pendingInfo = ThreadInfoBuilder.create();
                     }
                     parseThreadLine(line, pendingInfo);
                 }
@@ -255,79 +255,86 @@ public final class ThreadDumpParser {
      * Merge pending info into current thread builder
      */
     private static void mergePendingInfo(ThreadInfoBuilder current, ThreadInfoBuilder pending) {
-        if (pending.state != null && current.state == null) {
-            current.state = pending.state;
+        // Build pending to get immutable snapshot
+        ThreadInfo pendingInfo = pending.build();
+
+        // Merge state
+        if (pendingInfo.state() != null) {
+            current.state(pendingInfo.state());
         }
-        if (!pending.stackTrace.isEmpty()) {
-            // Reverse the stack trace since it was read in reverse order
-            List<StackFrame> reversedStack = new ArrayList<>(pending.stackTrace);
+
+        // Merge stack trace (reversed since read in reverse order)
+        if (!pendingInfo.stackTrace().isEmpty()) {
+            List<StackFrame> reversedStack = new ArrayList<>(pendingInfo.stackTrace());
             Collections.reverse(reversedStack);
-            current.stackTrace.addAll(0, reversedStack);
-        }
-        if (!pending.locks.isEmpty()) {
-            // Reverse the locks since they were read in reverse order
-            List<LockInfo> reversedLocks = new ArrayList<>(pending.locks);
-            Collections.reverse(reversedLocks);
-            current.locks.addAll(0, reversedLocks);
-        }
-        if (pending.waitingOnLock != null && current.waitingOnLock == null) {
-            current.waitingOnLock = pending.waitingOnLock;
-        }
-        if (pending.carryingVirtualThreadId != null && current.carryingVirtualThreadId == null) {
-            current.carryingVirtualThreadId = pending.carryingVirtualThreadId;
-        }
-        if (pending.additionalInfo != null) {
-            if (current.additionalInfo == null) {
-                current.additionalInfo = pending.additionalInfo;
-            } else {
-                current.additionalInfo = pending.additionalInfo + "\n" + current.additionalInfo;
+            for (StackFrame frame : reversedStack) {
+                current.addStackFrame(frame);
             }
+        }
+
+        // Merge locks (reversed since read in reverse order)
+        if (!pendingInfo.locks().isEmpty()) {
+            List<LockInfo> reversedLocks = new ArrayList<>(pendingInfo.locks());
+            Collections.reverse(reversedLocks);
+            for (LockInfo lock : reversedLocks) {
+                current.addLock(lock);
+            }
+        }
+
+        // Merge virtual thread ID
+        if (pendingInfo.carryingVirtualThreadId() != null) {
+            current.carryingVirtualThreadId(pendingInfo.carryingVirtualThreadId());
+        }
+
+        // Merge additional info
+        if (pendingInfo.additionalInfo() != null) {
+            current.additionalInfo(pendingInfo.additionalInfo());
         }
     }
 
     @NotNull
     private static ThreadInfoBuilder parseThreadHeader(String line) {
-        ThreadInfoBuilder builder = new ThreadInfoBuilder();
+        ThreadInfoBuilder builder = ThreadInfoBuilder.create();
 
         Matcher headerMatcher = THREAD_HEADER_PATTERN.matcher(line);
         if (headerMatcher.matches()) {
-            builder.name = headerMatcher.group(1);
-            builder.threadId = parseLongSafe(headerMatcher.group(2));
+            builder.name(headerMatcher.group(1));
+            builder.threadId(parseLongSafe(headerMatcher.group(2)));
             // Group 3 is the virtual thread ID in square brackets
-            builder.carryingVirtualThreadId = parseLongSafe(headerMatcher.group(3));
-            builder.priority = parseIntSafe(headerMatcher.group(4));
+            builder.carryingVirtualThreadId(parseLongSafe(headerMatcher.group(3)));
+            builder.priority(parseIntSafe(headerMatcher.group(4)));
         } else {
             // Lenient: just extract the thread name from quotes
             int firstQuote = line.indexOf('"');
             int lastQuote = line.lastIndexOf('"');
             if (firstQuote >= 0 && lastQuote > firstQuote) {
-                builder.name = line.substring(firstQuote + 1, lastQuote);
+                builder.name(line.substring(firstQuote + 1, lastQuote));
             } else {
-                builder.name = "unknown";
+                builder.name("unknown");
             }
         }
 
         // Check for daemon - only set if explicitly mentioned
         if (THREAD_HEADER_DAEMON.matcher(line).matches()) {
-            builder.daemon = true;
+            builder.daemon(true);
         }
 
         // Extract native ID
         Matcher nidMatcher = NATIVE_ID_PATTERN.matcher(line);
         if (nidMatcher.matches()) {
-            builder.nativeId = parseHexLongSafe(nidMatcher.group(1));
+            builder.nativeId(parseHexLongSafe(nidMatcher.group(1)));
         }
 
         // Extract CPU time
         Matcher cpuMatcher = CPU_TIME_PATTERN.matcher(line);
         if (cpuMatcher.matches()) {
-            builder.cpuTimeSec = parseTimeToSeconds(cpuMatcher.group(1), cpuMatcher.group(2));
+            builder.cpuTimeSec(parseTimeToSeconds(cpuMatcher.group(1), cpuMatcher.group(2)));
         }
 
         // Extract elapsed time
         Matcher elapsedMatcher = ELAPSED_TIME_PATTERN.matcher(line);
         if (elapsedMatcher.matches()) {
-            builder.elapsedTimeSec = parseTimeToSeconds(elapsedMatcher.group(1), elapsedMatcher.group(2));
+            builder.elapsedTimeSec(parseTimeToSeconds(elapsedMatcher.group(1), elapsedMatcher.group(2)));
         }
 
         return builder;
@@ -337,14 +344,14 @@ public final class ThreadDumpParser {
         // Parse "Carrying virtual thread #XXX"
         Matcher carryingMatcher = CARRYING_VIRTUAL_THREAD_PATTERN.matcher(line);
         if (carryingMatcher.matches()) {
-            builder.carryingVirtualThreadId = parseLongSafe(carryingMatcher.group(1));
+            builder.carryingVirtualThreadId(parseLongSafe(carryingMatcher.group(1)));
             return;
         }
 
         // Parse thread state
         Matcher stateMatcher = THREAD_STATE_PATTERN.matcher(line);
         if (stateMatcher.matches()) {
-            builder.state = parseThreadState(stateMatcher.group(1));
+            builder.state(parseThreadState(stateMatcher.group(1)));
             return;
         }
 
@@ -352,7 +359,7 @@ public final class ThreadDumpParser {
         Matcher stackMatcher = STACK_FRAME_PATTERN.matcher(line);
         if (stackMatcher.matches()) {
             StackFrame frame = parseStackFrame(stackMatcher.group(1), stackMatcher.group(2));
-            builder.stackTrace.add(frame);
+            builder.addStackFrame(frame);
             return;
         }
 
@@ -361,8 +368,7 @@ public final class ThreadDumpParser {
         if (waitingMatcher.matches()) {
             String lockId = waitingMatcher.group(1);
             String className = waitingMatcher.group(2);
-            builder.locks.add(new LockInfo(lockId, className, "waiting on"));
-            builder.waitingOnLock = lockId;
+            builder.addLock(new LockInfo(lockId, className, LockInfo.LockOperation.WAITING_ON));
             return;
         }
 
@@ -371,8 +377,7 @@ public final class ThreadDumpParser {
         if (waitingToLockMatcher.matches()) {
             String lockId = waitingToLockMatcher.group(1);
             String className = waitingToLockMatcher.group(2);
-            builder.locks.add(new LockInfo(lockId, className, "waiting on"));
-            builder.waitingOnLock = lockId;
+            builder.addLock(new LockInfo(lockId, className, LockInfo.LockOperation.WAITING_TO_LOCK));
             return;
         }
 
@@ -381,7 +386,7 @@ public final class ThreadDumpParser {
         if (lockedMatcher.matches()) {
             String lockId = lockedMatcher.group(1);
             String className = lockedMatcher.group(2);
-            builder.locks.add(new LockInfo(lockId, className, "locked"));
+            builder.addLock(new LockInfo(lockId, className, LockInfo.LockOperation.LOCKED));
             return;
         }
 
@@ -390,8 +395,14 @@ public final class ThreadDumpParser {
         if (parkingMatcher.matches()) {
             String lockId = parkingMatcher.group(1);
             String className = parkingMatcher.group(2);
-            builder.locks.add(new LockInfo(lockId, className, "parking"));
-            builder.waitingOnLock = lockId;
+            String ownerThreadId = parkingMatcher.group(3); // Optional owner thread ID
+            builder.addLock(new LockInfo(lockId, className, LockInfo.LockOperation.PARKING, ownerThreadId));
+            return;
+        }
+
+        // Parse lock info - eliminated
+        if (line.contains("- lock is eliminated")) {
+            builder.addLock(new LockInfo(null, null, LockInfo.LockOperation.ELIMINATED));
             return;
         }
 
@@ -399,11 +410,7 @@ public final class ThreadDumpParser {
         String trimmed = line.trim();
         if (!trimmed.isEmpty() && !trimmed.startsWith("at ") && !trimmed.startsWith("-")
                 && !trimmed.contains("java.lang.Thread.State:")) {
-            if (builder.additionalInfo == null) {
-                builder.additionalInfo = trimmed;
-            } else {
-                builder.additionalInfo += "\n" + trimmed;
-            }
+            builder.additionalInfo(trimmed);
         }
     }
 
@@ -640,7 +647,7 @@ public final class ThreadDumpParser {
                 if (waitingToLockMatcher.matches()) {
                     String lockId = waitingToLockMatcher.group(1);
                     String className = waitingToLockMatcher.group(2);
-                    currentLocks.add(new LockInfo(lockId, className, "waiting to lock"));
+                    currentLocks.add(new LockInfo(lockId, className, LockInfo.LockOperation.WAITING_TO_LOCK));
                     continue;
                 }
                 // Try waiting on pattern
@@ -648,7 +655,7 @@ public final class ThreadDumpParser {
                 if (waitingMatcher.matches()) {
                     String lockId = waitingMatcher.group(1);
                     String className = waitingMatcher.group(2);
-                    currentLocks.add(new LockInfo(lockId, className, "waiting to lock"));
+                    currentLocks.add(new LockInfo(lockId, className, LockInfo.LockOperation.WAITING_ON));
                 }
                 continue;
             }
@@ -658,7 +665,7 @@ public final class ThreadDumpParser {
             if (lockedMatcher.matches()) {
                 String lockId = lockedMatcher.group(1);
                 String className = lockedMatcher.group(2);
-                currentLocks.add(new LockInfo(lockId, className, "locked"));
+                currentLocks.add(new LockInfo(lockId, className, LockInfo.LockOperation.LOCKED));
                 continue;
             }
         }
@@ -690,43 +697,6 @@ public final class ThreadDumpParser {
                 ));
                 break;
             }
-        }
-    }
-
-    /**
-     * Builder for ThreadInfo to accumulate data during parsing
-     */
-    private static class ThreadInfoBuilder {
-        String name;
-        Long threadId;
-        Long nativeId;
-        Integer priority;
-        Boolean daemon;
-        Thread.State state;
-        Double cpuTimeSec;
-        Double elapsedTimeSec;
-        List<StackFrame> stackTrace = new ArrayList<>();
-        List<LockInfo> locks = new ArrayList<>();
-        String waitingOnLock;
-        String additionalInfo;
-        Long carryingVirtualThreadId;
-
-        ThreadInfo build() {
-            return new ThreadInfo(
-                    name,
-                    threadId,
-                    nativeId,
-                    priority,
-                    daemon,
-                    state,
-                    cpuTimeSec,
-                    elapsedTimeSec,
-                    stackTrace,
-                    locks,
-                    waitingOnLock,
-                    additionalInfo,
-                    carryingVirtualThreadId
-            );
         }
     }
 }

@@ -21,7 +21,6 @@ public record ThreadInfo(
         Double elapsedTimeSec,
         List<StackFrame> stackTrace,
         List<LockInfo> locks,
-        String waitingOnLock,
         String additionalInfo,
         Long carryingVirtualThreadId
 ) {
@@ -31,8 +30,7 @@ public record ThreadInfo(
         locks = locks != null ? List.copyOf(locks) : List.of();
     }
 
-    // Backwards-compatible constructor: previous versions used a 12-arg constructor
-    // Keep this to avoid changing many test fixtures; it delegates to the canonical constructor
+    // Backwards-compatible constructor for 11-arg version (without carryingVirtualThreadId)
     public ThreadInfo(String name,
                       Long threadId,
                       Long nativeId,
@@ -43,13 +41,13 @@ public record ThreadInfo(
                       Double elapsedTimeSec,
                       List<StackFrame> stackTrace,
                       List<LockInfo> locks,
-                      String waitingOnLock,
                       String additionalInfo) {
-        this(name, threadId, nativeId, priority, daemon, state, cpuTimeSec, elapsedTimeSec, stackTrace, locks, waitingOnLock, additionalInfo, null);
+        this(name, threadId, nativeId, priority, daemon, state, cpuTimeSec, elapsedTimeSec,
+             stackTrace, locks, additionalInfo, null);
     }
 
     /**
-     * Equals comparison that ignores threadId, nativeId, and waitingOnLock (hex values).
+     * Equals comparison that ignores threadId and nativeId (hex values).
      * Useful for test comparisons where memory addresses differ between runs.
      */
     public boolean equalsIgnoringHexValues(ThreadInfo other) {
@@ -65,7 +63,6 @@ public record ThreadInfo(
                java.util.Objects.equals(elapsedTimeSec, other.elapsedTimeSec) &&
                java.util.Objects.equals(stackTrace, other.stackTrace) &&
                locksEqualsIgnoringHexValues(locks, other.locks) &&
-               // Intentionally ignore waitingOnLock (hex value)
                java.util.Objects.equals(additionalInfo, other.additionalInfo) &&
                java.util.Objects.equals(carryingVirtualThreadId, other.carryingVirtualThreadId);
     }
@@ -89,10 +86,16 @@ public record ThreadInfo(
         List<LockInfo> locksList = this.locks.stream().filter(LockInfo::isWaitingOn).toList();
         if (locksList.isEmpty()) {
             return Optional.empty();
-        } if (locksList.size() == 1) {
+        }
+        if (locksList.size() == 1) {
             return Optional.of(locksList.get(0));
         } else {
             throw new IllegalStateException("Multiple locks found with 'waiting on' status for thread: " + name);
         }
+    }
+
+    @Deprecated
+    public String waitingOnLock() {
+        return getWaitedOnLock().map(LockInfo::lockId).orElse(null);
     }
 }

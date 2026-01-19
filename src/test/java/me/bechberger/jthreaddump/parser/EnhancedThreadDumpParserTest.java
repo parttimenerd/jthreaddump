@@ -245,10 +245,9 @@ class EnhancedThreadDumpParserTest {
                         new StackFrame("com.example.Test", "method", "Test.java", 20)
                 )
                 .locks(
-                        new LockInfo("0xdeadbeef", "java.lang.Object", "waiting on"),
-                        new LockInfo("0xcafebabe", "java.lang.String", "locked")
+                        new LockInfo("0xdeadbeef", "java.lang.Object", LockInfo.LockOperation.WAITING_TO_LOCK),
+                        new LockInfo("0xcafebabe", "java.lang.String", LockInfo.LockOperation.LOCKED)
                 )
-                .waitingOnLock("0xdeadbeef")
                 .build();
 
         assertEquals(1, dump.threads().size());
