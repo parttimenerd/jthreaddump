@@ -1,7 +1,6 @@
 package me.bechberger.jthreaddump.parser;
 
 import me.bechberger.jthreaddump.model.*;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;

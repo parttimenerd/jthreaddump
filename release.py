@@ -10,6 +10,11 @@ This script:
 5. Builds the package
 6. Optionally deploys to Maven Central
 7. Creates a git tag and commits the changes
+
+Additionally:
+- build-minimal: creates a temporary copy of the project with Jackson annotations and
+  JetBrains @Nullable removed (plus their dependencies), renames the artifactId to
+  jthreaddump-minimal, and builds it.
 """
 
 import re
@@ -17,7 +22,7 @@ import sys
 import subprocess
 import argparse
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 
 
 class VersionBumper:
@@ -89,6 +94,12 @@ class VersionBumper:
             f'<version>{old_version}</version>',
             f'<version>{new_version}</version>'
         )
+        # Also update minimal artifact snippet if it appears explicitly
+        # (safe even if absent; it's a no-op)
+        content = content.replace(
+            f'<artifactId>jthreaddump-minimal</artifactId>\n    <version>{old_version}</version>',
+            f'<artifactId>jthreaddump-minimal</artifactId>\n    <version>{new_version}</version>'
+        )
         self.readme.write_text(content)
         print(f"✓ Updated README.md: {old_version} -> {new_version}")
 
@@ -106,6 +117,7 @@ class VersionBumper:
         print(f"\n  README.md:")
         print(f"    - <version>{old_version}</version>")
         print(f"    + <version>{new_version}</version>")
+        print(f"    (also updates jthreaddump-minimal snippet if present)")
 
     def show_changelog_diff(self, version: str):
         """Show what would change in CHANGELOG.md"""
@@ -279,8 +291,16 @@ class VersionBumper:
 </dependency>
 ```
 
+```xml
+<dependency>
+    <groupId>me.bechberger</groupId>
+    <artifactId>jthreaddump-minimal</artifactId>
+    <version>{version}</version>
+</dependency>
+```
+
 ### Download JAR
-Download `jthreaddump.jar` from the assets below.
+Download `jthreaddump.jar` (full) and `jthreaddump-minimal.jar` (minimal) from the assets below.
 """
 
         # Create release notes file
@@ -288,24 +308,38 @@ Download `jthreaddump.jar` from the assets below.
         notes_file.write_text(release_notes)
 
         try:
-            # Build jar path
+            # Build jar paths
             jar_path = self.project_root / 'target' / 'jthreaddump.jar'
-            if not jar_path.exists():
-                print(f"⚠ JAR not found at {jar_path}, creating release without asset")
-                self.run_command(
-                    ['gh', 'release', 'create', tag,
-                     '--title', f'Release {version}',
-                     '--notes-file', str(notes_file)],
-                    f"Creating GitHub release {tag}"
-                )
+            minimal_jar_path = self.project_root / 'target' / 'jthreaddump-minimal.jar'
+
+            assets = []
+            if jar_path.exists():
+                assets.append(str(jar_path) + '#jthreaddump.jar')
             else:
-                self.run_command(
-                    ['gh', 'release', 'create', tag,
-                     '--title', f'Release {version}',
-                     '--notes-file', str(notes_file),
-                     str(jar_path) + '#jthreaddump.jar'],
-                    f"Creating GitHub release {tag}"
-                )
+                print(f"⚠ JAR not found at {jar_path}")
+
+            if minimal_jar_path.exists():
+                assets.append(str(minimal_jar_path) + '#jthreaddump-minimal.jar')
+            else:
+                print(f"⚠ Minimal JAR not found at {minimal_jar_path}")
+
+            create_cmd = ['gh', 'release', 'create', tag,
+                          '--title', f'Release {version}',
+                          '--notes-file', str(notes_file)] + assets
+            if not assets:
+                print("⚠ No JAR assets found, creating release without assets")
+
+            # If the release already exists (e.g. rerun), fall back to uploading assets.
+            try:
+                self.run_command(create_cmd, f"Creating GitHub release {tag}")
+            except SystemExit:
+                # run_command calls sys.exit(1) on failure; detect already-exists situations via stderr.
+                # We can't easily inspect stderr here, so we do a conservative retry: try uploading assets.
+                if assets:
+                    upload_cmd = ['gh', 'release', 'upload', tag, '--clobber'] + assets
+                    self.run_command(upload_cmd, f"Uploading GitHub release assets for {tag}")
+                else:
+                    raise
         finally:
             # Clean up notes file
             if notes_file.exists():
@@ -363,11 +397,11 @@ Download `jthreaddump.jar` from the assets below.
             shutil.rmtree(self.backup_dir)
             print("✓ Cleaned up backups")
 
-    def run_command(self, cmd: list, description: str, check=True) -> subprocess.CompletedProcess:
+    def run_command(self, cmd: list, description: str, check=True, cwd: Optional[Path] = None) -> subprocess.CompletedProcess:
         """Run a shell command"""
         print(f"\n→ {description}...")
         print(f"  $ {' '.join(cmd)}")
-        result = subprocess.run(cmd, cwd=self.project_root, capture_output=True, text=True)
+        result = subprocess.run(cmd, cwd=(cwd or self.project_root), capture_output=True, text=True)
 
         if result.returncode != 0 and check:
             print(f"✗ Failed: {description}")
@@ -436,6 +470,267 @@ Download `jthreaddump.jar` from the assets below.
             )
 
 
+def _strip_minimal_java_source(content: str) -> str:
+    """Strip Jackson and Nullable annotations/imports from a Java source file."""
+    out_lines = []
+    for line in content.splitlines(keepends=True):
+        # Remove Jackson annotation imports
+        if re.match(r"^[ \t]*import[ \t]+com\.fasterxml\.jackson\.annotation\..*;[ \t]*\r?\n?$", line):
+            continue
+
+        # Remove JetBrains Nullable import
+        if re.match(r"^[ \t]*import[ \t]+org\.jetbrains\.annotations\.Nullable[ \t]*;[ \t]*\r?\n?$", line):
+            continue
+
+        # Remove @Json* annotations (lines starting with @Json...)
+        if re.match(r"^[ \t]*@Json\w*\b.*\r?\n?$", line):
+            continue
+
+        # Remove standalone @Nullable annotation lines
+        if re.match(r"^[ \t]*@Nullable\b[ \t]*\r?\n?$", line):
+            continue
+
+        # Remove @Nullable occurrences (e.g. '@Nullable String x', 'Map<@Nullable String, ...>')
+        line = re.sub(r"\b@Nullable\b", "", line)
+
+        out_lines.append(line)
+
+    return "".join(out_lines)
+
+
+def _make_minimal_pom(pom_content: str) -> str:
+    """Return a modified pom.xml content for the minimal artifact."""
+    # Rename artifactId (first occurrence is the project artifactId)
+    pom_content = pom_content.replace(
+        "<artifactId>jthreaddump</artifactId>",
+        "<artifactId>jthreaddump-minimal</artifactId>",
+        1,
+    )
+
+    # Remove dependencies: drop any <dependency>...</dependency> block containing both the groupId and artifactId.
+    def _drop_dependency(xml: str, group_id: str, artifact_id: str) -> str:
+        pattern = (
+            r"\s*<dependency>"  # start
+            r"(?:(?!</dependency>).)*"  # body
+            + re.escape(f"<groupId>{group_id}</groupId>")
+            + r"(?:(?!</dependency>).)*"
+            + re.escape(f"<artifactId>{artifact_id}</artifactId>")
+            + r"(?:(?!</dependency>).)*"
+            r"</dependency>\s*"  # end
+        )
+        return re.sub(pattern, "\n", xml, flags=re.DOTALL)
+
+    pom_content = _drop_dependency(pom_content, "org.jetbrains", "annotations")
+    pom_content = _drop_dependency(pom_content, "com.fasterxml.jackson.core", "jackson-annotations")
+
+    # The extra Javadoc CLI args are optional and easy to get wrong when we strip Jackson.
+    # For the minimal build, drop the whole <additionalJOptions> block so javadoc can run cleanly.
+    pom_content = re.sub(
+        r"\s*<additionalJOptions>.*?</additionalJOptions>\s*",
+        "\n",
+        pom_content,
+        flags=re.DOTALL,
+    )
+
+    # Add -g:none to the existing maven-compiler-plugin configuration (minimal build should be stripped)
+    # We prefer to edit the existing compiler plugin rather than adding a second one.
+    def _ensure_compiler_g_none(xml: str) -> str:
+        plugin_re = re.compile(
+            r"(<plugin>\s*"  # start plugin
+            r"(?:(?!</plugin>).)*?"  # body
+            r"<artifactId>maven-compiler-plugin</artifactId>"  # identify
+            r"(?:(?!</plugin>).)*?"  # body
+            r"</plugin>)",
+            re.DOTALL,
+        )
+
+        m = plugin_re.search(xml)
+        if not m:
+            # No compiler plugin found; inject one early in <plugins>
+            inject = (
+                "<plugin>\n"
+                "    <groupId>org.apache.maven.plugins</groupId>\n"
+                "    <artifactId>maven-compiler-plugin</artifactId>\n"
+                "    <version>3.13.0</version>\n"
+                "    <configuration>\n"
+                "        <compilerArgs>\n"
+                "            <arg>-g:none</arg>\n"
+                "        </compilerArgs>\n"
+                "    </configuration>\n"
+                "</plugin>\n"
+            )
+            # Put it right after the opening <plugins> tag
+            return re.sub(r"(<plugins>\s*)", r"\\1\n" + inject, xml, count=1)
+
+        plugin_block = m.group(1)
+
+        # If it already contains -g:none, do nothing.
+        if "-g:none" in plugin_block:
+            return xml
+
+        # Ensure a <configuration> exists in the compiler plugin block.
+        if "<configuration>" not in plugin_block:
+            # Insert configuration before </plugin>
+            plugin_block_new = re.sub(
+                r"</plugin>\s*$",
+                "    <configuration>\n"
+                "        <compilerArgs>\n"
+                "            <arg>-g:none</arg>\n"
+                "        </compilerArgs>\n"
+                "    </configuration>\n"
+                "</plugin>",
+                plugin_block,
+                flags=re.DOTALL,
+            )
+            return xml[: m.start(1)] + plugin_block_new + xml[m.end(1) :]
+
+        # If compilerArgs exists, append our arg.
+        if "<compilerArgs>" in plugin_block:
+            plugin_block_new = re.sub(
+                r"(<compilerArgs>\s*)",
+                lambda m2: m2.group(1) + "\n            <arg>-g:none</arg>",
+                plugin_block,
+                count=1,
+            )
+            return xml[: m.start(1)] + plugin_block_new + xml[m.end(1) :]
+
+        # Otherwise insert compilerArgs inside configuration.
+        plugin_block_new = re.sub(
+            r"(<configuration>\s*)",
+            lambda m2: m2.group(1) + "\n        <compilerArgs>\n            <arg>-g:none</arg>\n        </compilerArgs>",
+            plugin_block,
+            count=1,
+        )
+        return xml[: m.start(1)] + plugin_block_new + xml[m.end(1) :]
+
+    pom_content = _ensure_compiler_g_none(pom_content)
+
+    return pom_content
+
+
+def build_minimal(project_root: Path, tmp: Optional[Path], keep_tmp: bool, skip_tests: bool) -> int:
+    """Build a minimal variant in a temporary directory."""
+    import shutil
+    import tempfile
+
+    src_root = project_root
+
+    # Determine temp dir
+    if tmp is None:
+        tmp_dir = Path(tempfile.mkdtemp(prefix="jthreaddump-minimal-"))
+        created_tmp = True
+    else:
+        tmp_dir = tmp.expanduser().resolve()
+        created_tmp = False
+        if tmp_dir.exists():
+            shutil.rmtree(tmp_dir)
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        # Copy repository (exclude heavy/irrelevant dirs)
+        ignore = shutil.ignore_patterns(
+            ".git", ".idea", "target", "archive-tmp", ".release-backup", "__pycache__", ".DS_Store"
+        )
+        shutil.copytree(src_root, tmp_dir, dirs_exist_ok=True, ignore=ignore)
+
+        # Patch pom.xml
+        pom_path = tmp_dir / "pom.xml"
+        pom_path.write_text(_make_minimal_pom(pom_path.read_text()))
+
+        # Patch Java sources
+        java_files = list((tmp_dir / "src" / "main" / "java").rglob("*.java"))
+        for jf in java_files:
+            jf.write_text(_strip_minimal_java_source(jf.read_text()))
+
+        # Build the minimal artifact
+        mvn_cmd = ["mvn", "clean", "package"]
+        if skip_tests:
+            mvn_cmd.append("-DskipTests")
+
+        result = subprocess.run(mvn_cmd, cwd=tmp_dir, capture_output=True, text=True)
+        sys.stdout.write(result.stdout)
+        sys.stderr.write(result.stderr)
+
+        if result.returncode != 0:
+            return result.returncode
+
+        # Copy resulting jar back into the main project's target/ folder
+        built_jar = tmp_dir / "target" / "jthreaddump-minimal.jar"
+        if built_jar.exists():
+            out_dir = project_root / "target"
+            out_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(built_jar, out_dir / "jthreaddump-minimal.jar")
+
+        print(f"\n✓ Built minimal artifact in: {tmp_dir}")
+        print(f"  • {built_jar}")
+        print(f"  • {project_root / 'target' / 'jthreaddump-minimal.jar'}")
+        return 0
+
+    finally:
+        if keep_tmp:
+            print(f"\nℹ Keeping temporary directory: {tmp_dir}")
+        else:
+            try:
+                shutil.rmtree(tmp_dir)
+            except Exception:
+                pass
+
+
+def _prepare_minimal_workspace(project_root: Path, tmp: Optional[Path]) -> Path:
+    """Create (or recreate) a minimal workspace directory and return its path."""
+    import shutil
+    import tempfile
+
+    src_root = project_root
+
+    if tmp is None:
+        tmp_dir = Path(tempfile.mkdtemp(prefix="jthreaddump-minimal-"))
+    else:
+        tmp_dir = tmp.expanduser().resolve()
+        if tmp_dir.exists():
+            shutil.rmtree(tmp_dir)
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+
+    ignore = shutil.ignore_patterns(
+        ".git", ".idea", "target", "archive-tmp", ".release-backup", "__pycache__", ".DS_Store"
+    )
+    shutil.copytree(src_root, tmp_dir, dirs_exist_ok=True, ignore=ignore)
+
+    # Patch pom.xml
+    pom_path = tmp_dir / "pom.xml"
+    pom_path.write_text(_make_minimal_pom(pom_path.read_text()))
+
+    # Patch Java sources
+    java_files = list((tmp_dir / "src" / "main" / "java").rglob("*.java"))
+    for jf in java_files:
+        jf.write_text(_strip_minimal_java_source(jf.read_text()))
+
+    return tmp_dir
+
+
+def test_minimal(project_root: Path, tmp: Optional[Path], keep_tmp: bool) -> int:
+    """Run mvn test on the minimal variant in a temporary directory."""
+    import shutil
+
+    tmp_dir = None
+    try:
+        tmp_dir = _prepare_minimal_workspace(project_root, tmp)
+        result = subprocess.run(["mvn", "clean", "test"], cwd=tmp_dir, capture_output=True, text=True)
+        sys.stdout.write(result.stdout)
+        sys.stderr.write(result.stderr)
+        return result.returncode
+    finally:
+        if tmp_dir is None:
+            return
+        if keep_tmp:
+            print(f"\nℹ Keeping temporary directory: {tmp_dir}")
+        else:
+            try:
+                shutil.rmtree(tmp_dir)
+            except Exception:
+                pass
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Bump version and deploy jthreaddump library',
@@ -445,23 +740,40 @@ Examples:
   # Full release (default): bump minor, test, build, deploy, commit, tag, push, GitHub release
   ./release.py
 
-  # Patch release
-  ./release.py --patch
+  # Build minimal variant into a temp directory
+  ./release.py build-minimal
 
-  # Major release
-  ./release.py --major
+  # Test minimal variant (runs mvn test in a rewritten workspace)
+  ./release.py test-minimal
 
-  # Build only, no deploy or GitHub release
-  ./release.py --no-deploy --no-github-release
+  # Build minimal variant into a specific directory and keep it for debugging
+  ./release.py build-minimal --tmp /tmp/jtd-min --keep-tmp
 
-  # Deploy but skip GitHub release
-  ./release.py --no-github-release
+  # Test minimal variant into a specific directory and keep it for debugging
+  ./release.py test-minimal --tmp /tmp/jtd-min --keep-tmp
 
-  # Dry run (show what would happen)
-  ./release.py --dry-run
-
-Note: CHANGELOG.md must have content under [Unreleased] section before releasing.
+ Note: CHANGELOG.md must have content under [Unreleased] section before releasing.
         '''
+    )
+
+    parser.add_argument(
+        'command',
+        nargs='?',
+        default='release',
+        choices=['release', 'build-minimal', 'test-minimal'],
+        help='Command to run: release (default) or build-minimal'
+    )
+
+    parser.add_argument(
+        '--tmp',
+        type=str,
+        default=None,
+        help='Directory to use for build-minimal/test-minimal temporary workspace (will be deleted unless --keep-tmp)'
+    )
+    parser.add_argument(
+        '--keep-tmp',
+        action='store_true',
+        help='Keep the temporary workspace directory created/used by build-minimal/test-minimal'
     )
 
     parser.add_argument(
@@ -510,6 +822,16 @@ Note: CHANGELOG.md must have content under [Unreleased] section before releasing
     # Determine project root
     script_path = Path(__file__).resolve()
     project_root = script_path.parent
+
+    if args.command == 'build-minimal':
+        tmp_path = Path(args.tmp) if args.tmp else None
+        return_code = build_minimal(project_root, tmp_path, args.keep_tmp, args.skip_tests)
+        sys.exit(return_code)
+
+    if args.command == 'test-minimal':
+        tmp_path = Path(args.tmp) if args.tmp else None
+        return_code = test_minimal(project_root, tmp_path, args.keep_tmp)
+        sys.exit(return_code)
 
     bumper = VersionBumper(project_root)
 
@@ -561,7 +883,7 @@ Note: CHANGELOG.md must have content under [Unreleased] section before releasing
             print("  • git push")
             print("  • git push --tags")
         if do_github_release:
-            print(f"  • gh release create v{new_version} (with CHANGELOG entry + jthreaddump.jar)")
+            print(f"  • gh release create v{new_version} (with CHANGELOG entry + jthreaddump.jar + jthreaddump-minimal.jar)")
 
         print("\n✓ No changes made (dry run)")
         return
@@ -577,12 +899,18 @@ Note: CHANGELOG.md must have content under [Unreleased] section before releasing
     if not args.skip_tests:
         print(f"  {step}. Run tests")
         step += 1
+        print(f"  {step}. Run minimal tests")
+        step += 1
 
     print(f"  {step}. Build package")
+    step += 1
+    print(f"  {step}. Build minimal package")
     step += 1
 
     if do_deploy:
         print(f"  {step}. Deploy to Maven Central")
+        step += 1
+        print(f"  {step}. Deploy minimal to Maven Central")
         step += 1
 
     print(f"  {step}. Commit and tag")
@@ -617,12 +945,22 @@ Note: CHANGELOG.md must have content under [Unreleased] section before releasing
         if not args.skip_tests:
             print("\n=== Running tests ===")
             bumper.run_tests()
+
+            print("\n=== Running minimal tests ===")
+            test_rc = test_minimal(project_root, None, keep_tmp=False)
+            if test_rc != 0:
+                raise RuntimeError(f"Minimal tests failed with exit code {test_rc}")
         else:
             print("\n⚠ Skipping tests")
 
         # Build package
         print("\n=== Building package ===")
         bumper.build_package()
+
+        print("\n=== Building minimal package ===")
+        minimal_rc = build_minimal(project_root, None, keep_tmp=False, skip_tests=True)
+        if minimal_rc != 0:
+            raise RuntimeError(f"Minimal build failed with exit code {minimal_rc}")
 
         # Deploy
         if do_deploy:
@@ -637,6 +975,27 @@ Note: CHANGELOG.md must have content under [Unreleased] section before releasing
             else:
                 bumper.deploy_release()
 
+                print("\n=== Deploying minimal to Maven Central ===")
+                # Deploy minimal artifact from a rewritten workspace
+                tmp_dir = _prepare_minimal_workspace(project_root, None)
+                try:
+                    deploy_result = subprocess.run(
+                        ['mvn', 'clean', 'deploy', '-P', 'release'],
+                        cwd=tmp_dir,
+                        capture_output=True,
+                        text=True,
+                    )
+                    sys.stdout.write(deploy_result.stdout)
+                    sys.stderr.write(deploy_result.stderr)
+                    if deploy_result.returncode != 0:
+                        raise RuntimeError(f"Minimal deploy failed with exit code {deploy_result.returncode}")
+                finally:
+                    import shutil
+                    try:
+                        shutil.rmtree(tmp_dir)
+                    except Exception:
+                        pass
+
         # Git operations
         print("\n=== Git operations ===")
         bumper.git_commit(new_version)
@@ -648,6 +1007,11 @@ Note: CHANGELOG.md must have content under [Unreleased] section before releasing
         # GitHub release
         if do_github_release:
             print("\n=== Creating GitHub release ===")
+            # Ensure both jars exist in target/ before creating the GitHub release.
+            if not (project_root / 'target' / 'jthreaddump-minimal.jar').exists():
+                minimal_rc = build_minimal(project_root, None, keep_tmp=False, skip_tests=True)
+                if minimal_rc != 0:
+                    raise RuntimeError(f"Minimal build failed with exit code {minimal_rc}")
             bumper.create_github_release(new_version)
 
         # Cleanup backups after successful release
@@ -679,6 +1043,7 @@ Note: CHANGELOG.md must have content under [Unreleased] section before releasing
 
     print(f"\nArtifacts:")
     print(f"  • target/jthreaddump.jar")
+    print(f"  • target/jthreaddump-minimal.jar")
     print(f"  • target/jthreaddump-{new_version}.jar")
     print(f"  • target/jthreaddump-{new_version}-sources.jar")
     print(f"  • target/jthreaddump-{new_version}-javadoc.jar")
