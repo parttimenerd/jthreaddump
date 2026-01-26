@@ -1,49 +1,28 @@
 package me.bechberger.jthreaddump;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import me.bechberger.jthreaddump.model.ThreadDump;
 import me.bechberger.jthreaddump.parser.ThreadDumpParser;
-import picocli.CommandLine;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.Callable;
 
 /**
  * Main entry point for jthreaddump CLI - parses thread dumps and outputs in various formats
  */
-@Command(
-        name = "jthreaddump",
-        description = "Thread Dump Parser Library - Parse Java thread dumps from jstack/jcmd output",
-        version = "0.4.0",
-        mixinStandardHelpOptions = true
-)
-public class Main implements Callable<Integer> {
+public class Main {
 
-    @Parameters(index = "0", description = "Path to the thread dump file (or '-' for stdin)", arity = "0..1")
-    private String dumpFile;
+    // simple CLI fields (positional file, and verbose flag)
+    private final String dumpFile; // '-' means read from stdin
+    private final boolean quiet;
+    private final boolean verbose;
 
-    @Option(names = {"-o", "--output"}, description = "Output format: text, json, yaml (default: ${DEFAULT-VALUE})")
-    private OutputFormat outputFormat = OutputFormat.TEXT;
-
-
-    @Option(names = {"-v", "--verbose"}, description = "Enable verbose output")
-    private boolean verbose = false;
-
-    @Option(names = {"-q", "--quiet"}, description = "Minimal output (suppress headers in text mode)")
-    private boolean quiet = false;
-
-    public enum OutputFormat {
-        TEXT, JSON, YAML
+    public Main(String dumpFile, boolean quiet, boolean verbose) {
+        this.dumpFile = dumpFile;
+        this.quiet = quiet;
+        this.verbose = verbose;
     }
 
-    @Override
     public Integer call() {
         try {
             // Read input
@@ -72,11 +51,12 @@ public class Main implements Callable<Integer> {
             ThreadDump dump = ThreadDumpParser.parse(content);
             verboseLog("Parsed " + dump.threads().size() + " threads");
 
-            // Output based on format
-            switch (outputFormat) {
-                case JSON -> outputJson(dump);
-                case YAML -> outputYaml(dump);
-                case TEXT -> outputText(dump);
+            // Only print the main output when not in quiet mode
+            if (!quiet) {
+                outputText(dump);
+            } else if (verbose) {
+                // In quiet mode we suppress normal output, but allow a verbose log if requested
+                verboseLog("Quiet mode enabled; skipping standard output.");
             }
 
             return 0;
@@ -96,32 +76,7 @@ public class Main implements Callable<Integer> {
         }
     }
 
-    private void outputJson(ThreadDump dump) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
-        mapper.findAndRegisterModules();
-        System.out.println(mapper.writeValueAsString(dump));
-    }
-
-    private void outputYaml(ThreadDump dump) throws IOException {
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        mapper.findAndRegisterModules();
-        System.out.println(mapper.writeValueAsString(dump));
-    }
-
     private void outputText(ThreadDump dump) {
-        if (!quiet) {
-            System.out.println("=== Thread Dump Analysis ===");
-            System.out.println();
-        }
-
-        if (!quiet && dump.jvmInfo() != null) {
-            System.out.println("JVM Info: " + dump.jvmInfo());
-        }
-        if (!quiet) {
-            System.out.println("Source: " + dump.sourceType());
-            System.out.println("Timestamp: " + dump.timestamp());
-        }
         System.out.println("Total Threads: " + dump.threads().size());
         System.out.println();
 
@@ -164,16 +119,6 @@ public class Main implements Callable<Integer> {
         if (dump.deadlockInfos() != null && !dump.deadlockInfos().isEmpty()) {
             System.out.println("⚠️  DEADLOCKS DETECTED: " + dump.deadlockInfos().size());
             System.out.println();
-        }
-
-        // Individual threads (limit in quiet mode)
-        if (!quiet) {
-            System.out.println("Threads:");
-            System.out.println("--------");
-            for (var thread : dump.threads()) {
-                printThread(thread);
-                System.out.println();
-            }
         }
     }
 
@@ -220,8 +165,53 @@ public class Main implements Callable<Integer> {
         }
     }
 
+    private static void printUsage() {
+        String usage = "Usage: jthreaddump [OPTIONS] [file]\n" +
+                "  file       Input file to read (use '-' or omit to read from stdin)\n" +
+                "Options:\n" +
+                "  -h, --help     Show this help message and exit\n" +
+                "  -v, --verbose  Enable verbose logging\n" +
+                "  -q, --quiet    Suppress standard output (errors still printed)\n";
+        System.out.print(usage);
+    }
+
     public static void main(String[] args) {
-        int exitCode = new CommandLine(new Main()).execute(args);
-        System.exit(exitCode);
+        // Minimal vanilla Java CLI parsing
+        String positional = null;
+        boolean endOfOptions = false;
+        boolean verbose = false;
+        boolean quiet = false;
+
+        for (int i = 0; i < args.length; i++) {
+            String a = args[i];
+            if (!endOfOptions && a.equals("--")) {
+                endOfOptions = true;
+                continue;
+            }
+            if (!endOfOptions && (a.equals("-h") || a.equals("--help"))) {
+                printUsage();
+                System.exit(0);
+            } else if (!endOfOptions && (a.equals("-v") || a.equals("--verbose"))) {
+                verbose = true;
+            } else if (!endOfOptions && (a.equals("-q") || a.equals("--quiet"))) {
+                quiet = true;
+            } else if (!a.startsWith("-") || endOfOptions) {
+                // first positional arg is file
+                if (positional == null) {
+                    positional = a;
+                } else {
+                    // ignore additional positionals for now
+                }
+            } else {
+                System.err.println("Unknown option: " + a);
+                printUsage();
+                System.exit(2);
+            }
+        }
+
+        Main program = new Main(positional, quiet, verbose);
+
+        Integer exitCode = program.call();
+        System.exit(exitCode == null ? 0 : exitCode);
     }
 }

@@ -8,7 +8,7 @@ A small Java library for parsing thread dumps from `jstack` and `jcmd` output.
 
 - **Parse jstack and jcmd output** - Automatic format detection
 - **Rich data model** - Thread states, stack traces, locks, JNI refs, deadlocks
-- **Multiple output formats** - Text, JSON, YAML
+- **Annotations for Jackson** - All model classes are annotated for JSON/YAML serialization
 - **Java 21+** - Modern Java with records and pattern matching
 - **Zero analysis** - Just parsing, you build the analysis
 
@@ -57,15 +57,6 @@ ThreadDump dump = ThreadDumpParser.parse(threadDump);
 # Parse and display summary
 jthreaddump dump.txt
 
-# Output as JSON
-jthreaddump dump.txt -o JSON
-
-# Output as YAML
-jthreaddump dump.txt -o YAML
-
-# Quiet mode (minimal output)
-jthreaddump dump.txt -q
-
 # Read from stdin
 jstack 12345 | jthreaddump -
 
@@ -81,7 +72,7 @@ jthreaddump dump.txt -v
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jthreaddump</artifactId>
-    <version>0.4.0</version>
+    <version>0.5.0</version>
 </dependency>
 ```
 
@@ -185,7 +176,6 @@ Thread Dump Parser Library - Parse Java thread dumps from jstack/jcmd output
 
       [<dumpFile>]   Path to the thread dump file (or '-' for stdin)
   -h, --help         Show this help message and exit.
-  -o, --output=<outputFormat>
                      Output format: TEXT, JSON, YAML (default: TEXT)
   -q, --quiet        Minimal output (suppress headers in text mode)
   -v, --verbose      Enable verbose output
