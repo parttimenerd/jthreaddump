@@ -292,7 +292,6 @@ public final class ThreadDumpParser {
         }
     }
 
-    @NotNull
     private static ThreadInfoBuilder parseThreadHeader(String line) {
         ThreadInfoBuilder builder = ThreadInfoBuilder.create();
 
