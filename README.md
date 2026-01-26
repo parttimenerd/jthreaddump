@@ -72,7 +72,17 @@ jthreaddump dump.txt -v
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jthreaddump</artifactId>
-    <version>0.5.0</version>
+    <version>0.5.1</version>
+</dependency>
+```
+
+And for the minimal version without annotations:
+
+```xml
+<dependency>
+    <groupId>me.bechberger</groupId>
+    <artifactId>jthreaddump-minimal</artifactId>
+    <version>0.5.1</version>
 </dependency>
 ```
 
@@ -171,15 +181,12 @@ dump.threads().stream()
 ## CLI Usage
 
 ```
-Usage: jthreaddump [-hqvV] [-o=<outputFormat>] [<dumpFile>]
-Thread Dump Parser Library - Parse Java thread dumps from jstack/jcmd output
-
-      [<dumpFile>]   Path to the thread dump file (or '-' for stdin)
-  -h, --help         Show this help message and exit.
-                     Output format: TEXT, JSON, YAML (default: TEXT)
-  -q, --quiet        Minimal output (suppress headers in text mode)
-  -v, --verbose      Enable verbose output
-  -V, --version      Print version information and exit.
+Usage: jthreaddump [OPTIONS] [file]
+  file       Input file to read (use '-' or omit to read from stdin)
+Options:
+  -h, --help     Show this help message and exit
+  -v, --verbose  Enable verbose logging
+  -q, --quiet    Suppress standard output (errors still printed)
 ```
 
 ## Testing
@@ -212,7 +219,6 @@ Support, Feedback, Contributing
 This project is open to feature requests/suggestions, bug reports etc.
 via [GitHub](https://github.com/parttimenerd/jthreaddump/issues) issues.
 Contribution and feedback are encouraged and always welcome.
-
 
 License
 -------
