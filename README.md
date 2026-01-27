@@ -72,7 +72,7 @@ jthreaddump dump.txt -v
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jthreaddump</artifactId>
-    <version>0.5.4</version>
+    <version>0.5.5</version>
 </dependency>
 ```
 
@@ -82,7 +82,7 @@ And for the minimal version without annotations:
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jthreaddump-minimal</artifactId>
-    <version>0.5.4</version>
+    <version>0.5.5</version>
 </dependency>
 ```
 
