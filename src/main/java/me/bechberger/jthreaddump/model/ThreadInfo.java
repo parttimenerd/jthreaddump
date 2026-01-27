@@ -59,12 +59,21 @@ public record ThreadInfo(
                java.util.Objects.equals(priority, other.priority) &&
                java.util.Objects.equals(daemon, other.daemon) &&
                java.util.Objects.equals(state, other.state) &&
-               java.util.Objects.equals(cpuTimeSec, other.cpuTimeSec) &&
-               java.util.Objects.equals(elapsedTimeSec, other.elapsedTimeSec) &&
+               doublesEqual(cpuTimeSec, other.cpuTimeSec) &&
+               doublesEqual(elapsedTimeSec, other.elapsedTimeSec) &&
                java.util.Objects.equals(stackTrace, other.stackTrace) &&
                locksEqualsIgnoringHexValues(locks, other.locks) &&
                java.util.Objects.equals(additionalInfo, other.additionalInfo) &&
                java.util.Objects.equals(carryingVirtualThreadId, other.carryingVirtualThreadId);
+    }
+
+    private static boolean doublesEqual(Double a, Double b) {
+        if (a == null || b == null) {
+            return a == b;
+        }
+        // Values are frequently derived from ms with 2 decimals (e.g. 46.88 ms -> 0.04688 sec)
+        // which can lead to tiny representation errors.
+        return Math.abs(a - b) <= 1e-9;
     }
 
     private static boolean locksEqualsIgnoringHexValues(List<LockInfo> list1, List<LockInfo> list2) {

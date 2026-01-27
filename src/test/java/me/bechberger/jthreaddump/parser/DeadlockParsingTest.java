@@ -5,6 +5,8 @@ import me.bechberger.jthreaddump.model.ThreadDump;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -166,6 +168,48 @@ class DeadlockParsingTest {
         assertEquals("Thread-B", threadA.heldBy());
         assertEquals("Thread-C", threadB.heldBy());
         assertEquals("Thread-A", threadC.heldBy());
+    }
+
+    private String loadResource(String fileName) throws IOException {
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(fileName)) {
+            if (is == null) {
+                throw new IOException("Resource not found: " + fileName);
+            }
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    @Test
+    void testParseSapOwnableSynchronizerDeadlockAndIndirectWaiters() throws IOException {
+        String content = loadResource("sapjvm/sapmachine-threaddump-4.txt");
+        ThreadDump dump = ThreadDumpParser.parse(content);
+
+        assertNotNull(dump);
+        assertNotNull(dump.deadlockInfos());
+        assertFalse(dump.deadlockInfos().isEmpty(), "Expected SAP deadlock section to be parsed");
+
+        // Find the deadlock cycle info (contains Deadlock A and Deadlock B)
+        DeadlockInfo cycleInfo = dump.deadlockInfos().stream()
+                .filter(i -> findDeadlockedThread(i, "Deadlock A") != null && findDeadlockedThread(i, "Deadlock B") != null)
+                .findFirst()
+                .orElse(null);
+        assertNotNull(cycleInfo, "Expected to find a deadlock cycle info containing Deadlock A and B");
+
+        DeadlockInfo.DeadlockedThread a = findDeadlockedThread(cycleInfo, "Deadlock A");
+        DeadlockInfo.DeadlockedThread b = findDeadlockedThread(cycleInfo, "Deadlock B");
+        assertNotNull(a, "Deadlock A should be parsed");
+        assertNotNull(b, "Deadlock B should be parsed");
+
+        // SAP format maps 'ownable synchronizer' id into waitingForObject
+        assertNull(a.waitingForMonitor(), "SAP ownable synchronizer deadlocks don't provide a monitor address");
+        assertNotNull(a.waitingForObject(), "waitingForObject should contain the ownable synchronizer id");
+        assertEquals("java.util.concurrent.locks.ReentrantLock$NonfairSync", a.waitingForObjectType());
+        assertEquals("Deadlock B", a.heldBy());
+
+        assertNull(b.waitingForMonitor(), "SAP ownable synchronizer deadlocks don't provide a monitor address");
+        assertNotNull(b.waitingForObject(), "waitingForObject should contain the ownable synchronizer id");
+        assertEquals("java.util.concurrent.locks.ReentrantLock$NonfairSync", b.waitingForObjectType());
+        assertEquals("Deadlock A", b.heldBy());
     }
 
     private DeadlockInfo.DeadlockedThread findDeadlockedThread(DeadlockInfo info, String threadName) {

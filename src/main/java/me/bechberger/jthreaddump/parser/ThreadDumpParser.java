@@ -23,7 +23,7 @@ public final class ThreadDumpParser {
 
     // Thread header patterns
     private static final Pattern THREAD_HEADER_PATTERN = Pattern.compile(
-            "\"([^\"]+)\"\\s+#(\\d+)(?:\\s+\\[(\\d+)\\])?(?:\\s+daemon)?(?:\\s+prio=(\\d+))?.*");
+            "\"([^\"]+)\"\\s+#(\\d+)(?:\\s+\\[(\\d+)\\])?(?:\\s+(daemon))?(?:\\s+prio=(\\d+))?.*");
 
     private static final Pattern THREAD_HEADER_DAEMON = Pattern.compile(".*\\sdaemon\\s.*");
 
@@ -31,24 +31,38 @@ public final class ThreadDumpParser {
     private static final Pattern CARRYING_VIRTUAL_THREAD_PATTERN = Pattern.compile(
             "\\s*Carrying virtual thread #(\\d+).*");
 
-    // Thread state pattern
+    // Unquoted VM/GC thread header pattern (SAP/JDK8 prints e.g. "VM Thread" os_prio=2 cpu=...)
+    private static final Pattern UNQUOTED_THREAD_HEADER_PATTERN = Pattern.compile(
+            "\"?([^\"]+?)\"?\\s+(?:os_prio=\\d+).*"
+    );
+
+    private static final Pattern UNQUOTED_THREAD_NAME_PATTERN = Pattern.compile(
+            "^\"?([^\"]+?)\"?\\s+os_prio=.*"
+    );
+
+    private static final Pattern RUNNABLE_WORD_PATTERN = Pattern.compile(".*\\brunnable\\b.*");
+
     private static final Pattern THREAD_STATE_PATTERN = Pattern.compile(
             "java\\.lang\\.Thread\\.State:\\s+(\\w+).*");
 
     // Native ID pattern
     private static final Pattern NATIVE_ID_PATTERN = Pattern.compile(
-            ".*nid=(0x[0-9a-fA-F]+).*");
+            ".*?\\bnid=(0x[0-9a-fA-F]+)\\b.*");
+
+    // SAP-style priority can appear on a separate line like: prio=5 tid=... nid=...
+    private static final Pattern PRIO_PATTERN = Pattern.compile(".*\\bprio=(\\d+).*");
 
     // CPU and elapsed time patterns
     private static final Pattern CPU_TIME_PATTERN = Pattern.compile(
-            ".*cpu=([0-9.]+)([mun]?s).*");
+            ".*\\bcpu=([0-9.]+)(?:\\s+\\[reset\\s+[0-9.]+\\])?\\s*([mun]?s)\\b.*");
 
     private static final Pattern ELAPSED_TIME_PATTERN = Pattern.compile(
-            ".*elapsed=([0-9.]+)([mun]?s).*");
+            ".*\\belapsed=([0-9.]+)(?:\\s+\\[reset\\s+[0-9.]+\\])?\\s*([mun]?s)\\b.*");
 
     // Stack frame pattern
     private static final Pattern STACK_FRAME_PATTERN = Pattern.compile(
-            "at\\s+([^(]+)\\(([^)]+)\\).*");
+            "at\\s+(.+)\\(([^)]+)\\).*"
+    );
 
     // Lock patterns
     private static final Pattern WAITING_ON_PATTERN = Pattern.compile(
@@ -56,6 +70,9 @@ public final class ThreadDumpParser {
 
     private static final Pattern WAITING_TO_LOCK_PATTERN = Pattern.compile(
             "-\\s+waiting to lock\\s+<(0x[0-9a-fA-F]+)>\\s+\\(a\\s+([^)]+)\\).*");
+
+    private static final Pattern WAITING_TO_RELOCK_PATTERN = Pattern.compile(
+            "-\\s+waiting to re-lock in wait\\(\\)\\s+<(0x[0-9a-fA-F]+)>\\s+\\(a\\s+([^)]+)\\).*");
 
     private static final Pattern LOCKED_PATTERN = Pattern.compile(
             "-\\s+locked\\s+<(0x[0-9a-fA-F]+)>\\s+\\(a\\s+([^)]+)\\).*");
@@ -75,13 +92,35 @@ public final class ThreadDumpParser {
             "Found one Java-level deadlock:");
 
     private static final Pattern DEADLOCK_THREAD_NAME_PATTERN = Pattern.compile(
-            "\"([^\"]+)\":");
+            "\\\"([^\\\"]+)\\\":");
 
     private static final Pattern DEADLOCK_WAITING_PATTERN = Pattern.compile(
             "waiting to lock monitor (0x[0-9a-fA-F]+)\\s+\\(object (0x[0-9a-fA-F]+),\\s+a\\s+([^)]+)\\),.*");
 
+    // SAP JVM deadlock format:
+    //   waiting for ownable synchronizer 0x..., (a ...),
+    //   which is held by "Thread" (tid=0x...)
+    private static final Pattern DEADLOCK_WAITING_OWNABLE_SYNCHRONIZER_PATTERN = Pattern.compile(
+            "waiting for ownable synchronizer (0x[0-9a-fA-F]+),\\s+\\(a\\s+([^)]+)\\),?\\s*");
+
+    // like above, but the 0x... can be without a 0x prefix in some variants; keep as a fallback
+    private static final Pattern DEADLOCK_WAITING_OWNABLE_SYNCHRONIZER_PATTERN_FALLBACK = Pattern.compile(
+            "waiting for ownable synchronizer ([0-9a-fA-Fx]+),\\s+\\(a\\s+([^)]+)\\),?\\s*");
+
+    // SAP 'indirectly waiting' section header
+    private static final Pattern DEADLOCK_INDIRECT_WAITERS_HEADER_PATTERN = Pattern.compile(
+            "Threads \\((?:in)?directly\\) waiting on deadlocked thread \\\"([^\\\"]+)\\\".*");
+
+    // Thread label in indirect section: "Indirectly deadlocked" (tid=0x...):
+    private static final Pattern DEADLOCK_INDIRECT_THREAD_LABEL_PATTERN = Pattern.compile(
+            "\\\"([^\\\"]+)\\\"\\s+\\(tid=.*\\):");
+
+    // SAP deadlock thread line can appear as: "Deadlock A" (tid=0x...): (note: no colon-only after quote)
+    private static final Pattern SAP_DEADLOCK_THREAD_LABEL_PATTERN = Pattern.compile(
+            "\\\"([^\\\"]+)\\\"\\s*(?:\\(tid=.*\\))?:");
+
     private static final Pattern DEADLOCK_HELD_BY_PATTERN = Pattern.compile(
-            "which is held by \"([^\"]+)\"");
+            "which is held by \\\"([^\\\"]+)\\\"");
 
     private static final Pattern DEADLOCK_SUMMARY_PATTERN = Pattern.compile(
             "Found (\\d+) deadlocks?\\.");
@@ -206,7 +245,7 @@ public final class ThreadDumpParser {
                 continue;
             }
 
-            // Try to parse thread header
+            // Try to parse thread header (quoted)
             if (line.startsWith("\"")) {
                 // Save previous thread if any
                 if (currentThread != null) {
@@ -220,6 +259,31 @@ public final class ThreadDumpParser {
                     isReverseOrder = true; // File has info before headers, so it's in reverse order
                 }
                 continue;
+            }
+
+            // Try to parse unquoted VM/GC thread header (e.g. "VM Thread" os_prio=2 cpu=...)
+            // These threads typically have no java.lang.Thread.State line nor stack trace.
+            if (currentThread == null && line.contains("os_prio=") && !line.startsWith("io=") && !line.startsWith("tid=")) {
+                Matcher nameMatcher = UNQUOTED_THREAD_NAME_PATTERN.matcher(line);
+                if (nameMatcher.matches()) {
+                    currentThread = ThreadInfoBuilder.create();
+                    currentThread.name(nameMatcher.group(1).trim());
+
+                    Matcher cpuMatcher = CPU_TIME_PATTERN.matcher(line);
+                    if (cpuMatcher.matches()) {
+                        currentThread.cpuTimeSec(parseTimeToSeconds(cpuMatcher.group(1), cpuMatcher.group(2)));
+                    }
+                    Matcher elapsedMatcher = ELAPSED_TIME_PATTERN.matcher(line);
+                    if (elapsedMatcher.matches()) {
+                        currentThread.elapsedTimeSec(parseTimeToSeconds(elapsedMatcher.group(1), elapsedMatcher.group(2)));
+                    }
+
+                    // Infer state from header keywords (SAP prints runnable/waiting on condition)
+                    if (RUNNABLE_WORD_PATTERN.matcher(line).matches()) {
+                        currentThread.state(Thread.State.RUNNABLE);
+                    }
+                    continue;
+                }
             }
 
             // If we have a current thread, parse additional info
@@ -270,6 +334,7 @@ public final class ThreadDumpParser {
                line.startsWith("at ") ||
                line.contains("- waiting on") ||
                line.contains("- waiting to lock") ||
+               line.contains("- waiting to re-lock in wait()") ||
                line.contains("- locked") ||
                line.contains("- parking to wait for");
     }
@@ -324,7 +389,16 @@ public final class ThreadDumpParser {
             builder.threadId(parseLongSafe(headerMatcher.group(2)));
             // Group 3 is the virtual thread ID in square brackets
             builder.carryingVirtualThreadId(parseLongSafe(headerMatcher.group(3)));
-            builder.priority(parseIntSafe(headerMatcher.group(4)));
+            // Group 4 is the optional 'daemon' marker when present; group 5 is priority
+            String daemonGroup = headerMatcher.group(4);
+            builder.priority(parseIntSafe(headerMatcher.group(5)));
+
+            // Explicitly set daemon flag based on header presence (true when 'daemon' present, false otherwise)
+            if (daemonGroup != null) {
+                builder.daemon(true);
+            } else {
+                builder.daemon(false);
+            }
         } else {
             // Lenient: just extract the thread name from quotes
             int firstQuote = line.indexOf('"');
@@ -334,12 +408,18 @@ public final class ThreadDumpParser {
             } else {
                 builder.name("unknown");
             }
+
+            // SAP thread lines are quoted but don't include '#<id>'; still contain 'daemon'.
+            // Explicitly set daemon based on whether the header line contains the marker
+            if (THREAD_HEADER_DAEMON.matcher(line).matches()) {
+                builder.daemon(true);
+            } else {
+                builder.daemon(false);
+            }
         }
 
-        // Check for daemon - only set if explicitly mentioned
-        if (THREAD_HEADER_DAEMON.matcher(line).matches()) {
-            builder.daemon(true);
-        }
+        // Note: parseThreadLine may still set daemon(true) later if the marker appears on subsequent lines;
+        // setting false here ensures the field is never left null.
 
         // Extract native ID
         Matcher nidMatcher = NATIVE_ID_PATTERN.matcher(line);
@@ -363,6 +443,47 @@ public final class ThreadDumpParser {
     }
 
     private static void parseThreadLine(String line, ThreadInfoBuilder builder) {
+        if (line.startsWith("io=")) {
+            return;
+        }
+
+        // SAP prints the daemon marker on the first thread line, even when it's not the jstack header form.
+        if (line.contains(" daemon ")) {
+            builder.daemon(true);
+            // don't return
+        }
+
+        if (line.startsWith("tid=")) {
+            Matcher nidMatcher = NATIVE_ID_PATTERN.matcher(line);
+            if (nidMatcher.matches()) {
+                builder.nativeId(parseHexLongSafe(nidMatcher.group(1)));
+            }
+
+            // SAP/JDK8 unquoted VM/GC threads often have no java.lang.Thread.State line;
+            // their state is expressed on this tid-line (e.g. '... runnable').
+            if (builder.state() == null && RUNNABLE_WORD_PATTERN.matcher(line).matches()) {
+                builder.state(Thread.State.RUNNABLE);
+            }
+            return;
+        }
+
+        // SAP/JDK8 often prints prio/tid/nid on its own line; capture prio if present.
+        // ThreadInfoBuilder has no priority() getter, so we rely on the fact that we only see one such line per thread.
+        Matcher prioMatcher = PRIO_PATTERN.matcher(line);
+        if (prioMatcher.matches()) {
+            // Don't overwrite an existing priority from the header if present: only set if builder.additionalInfo() isn't used here.
+            // Since there's no getter, we set unconditionally; header priority is on the header line and will be the same value.
+            builder.priority(parseIntSafe(prioMatcher.group(1)));
+            // don't return: same line might also contain nid=...
+        }
+
+        // SAP-style prio/tid line also contains nid=...; capture it here too.
+        Matcher nidMatcher = NATIVE_ID_PATTERN.matcher(line);
+        if (nidMatcher.matches()) {
+            builder.nativeId(parseHexLongSafe(nidMatcher.group(1)));
+            // don't return
+        }
+
         // Parse "Carrying virtual thread #XXX"
         Matcher carryingMatcher = CARRYING_VIRTUAL_THREAD_PATTERN.matcher(line);
         if (carryingMatcher.matches()) {
@@ -403,6 +524,15 @@ public final class ThreadDumpParser {
             return;
         }
 
+        // Parse lock info - waiting to re-lock in wait()
+        Matcher waitingToRelockMatcher = WAITING_TO_RELOCK_PATTERN.matcher(line);
+        if (waitingToRelockMatcher.matches()) {
+            String lockId = waitingToRelockMatcher.group(1);
+            String className = waitingToRelockMatcher.group(2);
+            builder.addLock(new LockInfo(lockId, className, LockInfo.LockOperation.WAITING_TO_LOCK));
+            return;
+        }
+
         // Parse lock info - locked
         Matcher lockedMatcher = LOCKED_PATTERN.matcher(line);
         if (lockedMatcher.matches()) {
@@ -437,6 +567,15 @@ public final class ThreadDumpParser {
     }
 
     private static StackFrame parseStackFrame(String method, String location) {
+        // SAP/OpenJDK sometimes prints method descriptors/return types, e.g.
+        //   java.io.FileInputStream.readBytes([BII)I
+        // or module+descriptor combos.
+        // Strip everything from the first '(' to get the classical "class.method".
+        int sigPos = method.indexOf('(');
+        if (sigPos >= 0) {
+            method = method.substring(0, sigPos);
+        }
+
         // Parse method: "className.methodName"
         int lastDot = method.lastIndexOf('.');
         String className = lastDot > 0 ? method.substring(0, lastDot) : method;
@@ -533,11 +672,9 @@ public final class ThreadDumpParser {
      */
     private static DeadlockInfo parseDeadlockSection(BufferedReader reader) throws IOException {
         List<DeadlockInfo.DeadlockedThread> deadlockedThreads = new ArrayList<>();
-        String summary = null;
         String line;
 
         // First section: deadlock descriptions
-        DeadlockInfo.DeadlockedThread currentDeadlockedThread = null;
         String currentThreadName = null;
         String waitingForMonitor = null;
         String waitingForObject = null;
@@ -551,11 +688,30 @@ public final class ThreadDumpParser {
                 continue;
             }
 
-            // Check for summary line (e.g., "Found 2 deadlocks.") - ignore it
-            Matcher summaryMatcher = DEADLOCK_SUMMARY_PATTERN.matcher(line);
-            if (summaryMatcher.find()) {
-                summary = line;
-                // Continue parsing - don't break on summary lines
+            // Summary lines can appear multiple times in SAP dumps (e.g. "Found 1 deadlock.")
+            if (DEADLOCK_SUMMARY_PATTERN.matcher(line).find()) {
+                continue;
+            }
+
+            // Indirect waiter block can appear before or after the actual deadlock; parse it into an extra DeadlockInfo.
+            Matcher indirectHeader = DEADLOCK_INDIRECT_WAITERS_HEADER_PATTERN.matcher(line);
+            if (indirectHeader.find()) {
+                String deadlockedThreadName = indirectHeader.group(1);
+                DeadlockInfo indirect = parseIndirectDeadlockWaitersSection(reader, deadlockedThreadName);
+                if (indirect != null && !indirect.threads().isEmpty()) {
+                    // We represent this as a separate deadlock group (per requirement)
+                    // Can't return it here, so we stash it by merging after: simplest is to create a synthetic entry:
+                    // Add a marker thread that references the deadlocked thread, then the waiters.
+                    // But we want separate DeadlockInfo records -> encode as one DeadlockInfo with just the waiters.
+                    // To keep API stable, we add its threads to the current list only when we haven't yet started parsing
+                    // a cycle; otherwise we'd mix groups.
+                    // Therefore: if we already have cycle threads, we stop parsing now by rewinding via stored line isn't possible.
+                    // Instead: we add it as synthetic "group" by appending a separator thread is wrong.
+                    // Better: interpret this as part of the same deadlock info if no cycle parsed; else ignore.
+                    // Requirement says "yes" to parsing indirect waiters, so we'll attach as additional threads
+                    // to the current deadlock info when possible.
+                    deadlockedThreads.addAll(indirect.threads());
+                }
                 continue;
             }
 
@@ -566,23 +722,25 @@ public final class ThreadDumpParser {
                     deadlockedThreads.add(new DeadlockInfo.DeadlockedThread(
                             currentThreadName, waitingForMonitor, waitingForObject,
                             waitingForObjectType, heldBy, List.of(), List.of()));
-                    currentThreadName = null; // Clear to avoid duplicate save at end
+                    currentThreadName = null;
                 }
                 // Parse stack information section
                 parseDeadlockStackSection(reader, deadlockedThreads);
                 break;
             }
 
-            // Parse thread name
+            // Parse thread labels (HotSpot: "Name":, SAP: "Name" (tid=...):)
             Matcher threadNameMatcher = DEADLOCK_THREAD_NAME_PATTERN.matcher(line);
-            if (threadNameMatcher.find()) {
-                // Save previous thread if any
+            Matcher sapThreadNameMatcher = SAP_DEADLOCK_THREAD_LABEL_PATTERN.matcher(line);
+            if (threadNameMatcher.find() || sapThreadNameMatcher.find()) {
+                String name = threadNameMatcher.find(0) ? threadNameMatcher.group(1) : sapThreadNameMatcher.group(1);
+
                 if (currentThreadName != null) {
                     deadlockedThreads.add(new DeadlockInfo.DeadlockedThread(
                             currentThreadName, waitingForMonitor, waitingForObject,
                             waitingForObjectType, heldBy, List.of(), List.of()));
                 }
-                currentThreadName = threadNameMatcher.group(1);
+                currentThreadName = name;
                 waitingForMonitor = null;
                 waitingForObject = null;
                 waitingForObjectType = null;
@@ -590,7 +748,7 @@ public final class ThreadDumpParser {
                 continue;
             }
 
-            // Parse waiting for lock
+            // Parse HotSpot monitor waiting
             Matcher waitingMatcher = DEADLOCK_WAITING_PATTERN.matcher(line);
             if (waitingMatcher.find()) {
                 waitingForMonitor = waitingMatcher.group(1);
@@ -599,7 +757,24 @@ public final class ThreadDumpParser {
                 continue;
             }
 
-            // Parse held by
+            // Parse SAP ownable synchronizer waiting
+            Matcher ownableMatcher = DEADLOCK_WAITING_OWNABLE_SYNCHRONIZER_PATTERN.matcher(line);
+            if (ownableMatcher.find()) {
+                // Map synchronizer id into waitingForObject (per requirement). There is no monitor address for this format.
+                waitingForMonitor = null;
+                waitingForObject = ownableMatcher.group(1);
+                waitingForObjectType = ownableMatcher.group(2);
+                continue;
+            }
+            Matcher ownableFallbackMatcher = DEADLOCK_WAITING_OWNABLE_SYNCHRONIZER_PATTERN_FALLBACK.matcher(line);
+            if (ownableFallbackMatcher.find()) {
+                waitingForMonitor = null;
+                waitingForObject = ownableFallbackMatcher.group(1);
+                waitingForObjectType = ownableFallbackMatcher.group(2);
+                continue;
+            }
+
+            // Parse held by (works for both formats)
             Matcher heldByMatcher = DEADLOCK_HELD_BY_PATTERN.matcher(line);
             if (heldByMatcher.find()) {
                 heldBy = heldByMatcher.group(1);
@@ -615,6 +790,134 @@ public final class ThreadDumpParser {
         }
 
         return new DeadlockInfo(deadlockedThreads);
+    }
+
+    /**
+     * Parse SAP section:
+     *   Threads (in)directly waiting on deadlocked thread "X" ...
+     * Produces DeadlockedThread entries for each listed waiting thread, setting heldBy to the deadlocked thread name.
+     */
+    private static @Nullable DeadlockInfo parseIndirectDeadlockWaitersSection(BufferedReader reader,
+            String deadlockedThreadName) throws IOException {
+        List<DeadlockInfo.DeadlockedThread> waiters = new ArrayList<>();
+        String line;
+
+        String currentThreadName = null;
+        String waitingForObject = null;
+        String waitingForObjectType = null;
+        String heldBy = deadlockedThreadName;
+
+        while ((line = reader.readLine()) != null) {
+            String trimmed = line.trim();
+
+            // The indirect section terminates right before the next major section and is separated by blank lines.
+            // If we see a blank line and already parsed at least one waiter, stop here without consuming further.
+            if (trimmed.isEmpty()) {
+                if (currentThreadName != null) {
+                    waiters.add(new DeadlockInfo.DeadlockedThread(
+                            currentThreadName,
+                            null,
+                            waitingForObject,
+                            waitingForObjectType,
+                            heldBy,
+                            List.of(),
+                            List.of()
+                    ));
+                    currentThreadName = null;
+                }
+                if (!waiters.isEmpty()) {
+                    break;
+                }
+                continue;
+            }
+
+            // Header underline separator or other decoration lines
+            if (trimmed.startsWith("=") || trimmed.startsWith("-")) {
+                continue;
+            }
+
+            Matcher threadLabel = DEADLOCK_INDIRECT_THREAD_LABEL_PATTERN.matcher(trimmed);
+            if (threadLabel.find()) {
+                // save previous
+                if (currentThreadName != null) {
+                    waiters.add(new DeadlockInfo.DeadlockedThread(
+                            currentThreadName,
+                            null,
+                            waitingForObject,
+                            waitingForObjectType,
+                            heldBy,
+                            List.of(),
+                            List.of()
+                    ));
+                }
+                currentThreadName = threadLabel.group(1);
+                waitingForObject = null;
+                waitingForObjectType = null;
+                heldBy = deadlockedThreadName;
+                continue;
+            }
+
+            Matcher ownableMatcher = DEADLOCK_WAITING_OWNABLE_SYNCHRONIZER_PATTERN.matcher(trimmed);
+            Matcher ownableFallbackMatcher = DEADLOCK_WAITING_OWNABLE_SYNCHRONIZER_PATTERN_FALLBACK.matcher(trimmed);
+            if (ownableMatcher.find() || ownableFallbackMatcher.find()) {
+                Matcher m = ownableMatcher.find() ? ownableMatcher : ownableFallbackMatcher;
+                waitingForObject = m.group(1);
+                waitingForObjectType = m.group(2);
+                continue;
+            }
+
+            Matcher heldByMatcher = DEADLOCK_HELD_BY_PATTERN.matcher(trimmed);
+            if (heldByMatcher.find()) {
+                heldBy = heldByMatcher.group(1);
+            }
+        }
+
+        if (currentThreadName != null) {
+            waiters.add(new DeadlockInfo.DeadlockedThread(
+                    currentThreadName,
+                    null,
+                    waitingForObject,
+                    waitingForObjectType,
+                    heldBy,
+                    List.of(),
+                    List.of()
+            ));
+        }
+
+        return new DeadlockInfo(waiters);
+    }
+
+    private static @Nullable Instant tryParseTimestamp(String line) {
+        String trimmed = line == null ? "" : line.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+
+        String candidate = trimmed;
+        String prefix = "Thread dump triggered at ";
+        if (candidate.startsWith(prefix)) {
+            candidate = candidate.substring(prefix.length()).trim();
+        }
+
+        // Common formats seen in practice:
+        // - 2024-01-15 10:30:45
+        // - 2024-01-15T10:30:45Z
+        // - 2024-01-15T10:30:45.123Z
+        try {
+            if (candidate.contains("T") && (candidate.endsWith("Z") || candidate.contains("+") || candidate.contains("-"))) {
+                return Instant.parse(candidate);
+            }
+        } catch (DateTimeParseException ignored) {
+            // fall back to local date-time parsing
+        }
+
+        try {
+            // Treat local timestamps as system default zone for reproducibility within an environment.
+            LocalDateTime ldt = LocalDateTime.parse(candidate, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            return ldt.atZone(ZoneId.systemDefault()).toInstant();
+        } catch (DateTimeParseException ignored) {
+            return null;
+        }
     }
 
     /**
@@ -640,15 +943,18 @@ public final class ThreadDumpParser {
                 continue;
             }
 
-            // Check for thread name
+            // Check for thread name (HotSpot: "Thread":, SAP: "Thread"(tid=...):)
             Matcher threadNameMatcher = DEADLOCK_THREAD_NAME_PATTERN.matcher(line);
-            if (threadNameMatcher.find()) {
+            Matcher sapThreadNameMatcher = SAP_DEADLOCK_THREAD_LABEL_PATTERN.matcher(line);
+            if (threadNameMatcher.find() || sapThreadNameMatcher.find()) {
+                String name = threadNameMatcher.find(0) ? threadNameMatcher.group(1) : sapThreadNameMatcher.group(1);
+
                 // Save previous thread
                 if (currentThreadName != null) {
                     updateDeadlockedThreadWithStack(deadlockedThreads, currentThreadName,
                             currentStackTrace, currentLocks);
                 }
-                currentThreadName = threadNameMatcher.group(1);
+                currentThreadName = name;
                 currentStackTrace = new ArrayList<>();
                 currentLocks = new ArrayList<>();
                 continue;
@@ -663,20 +969,20 @@ public final class ThreadDumpParser {
             }
 
             // Parse lock info - waiting to lock
-            if (line.contains("- waiting to lock") || line.contains("- waiting on")) {
-                // Try waiting to lock pattern first
+            if (line.contains("- waiting to lock")) {
                 Matcher waitingToLockMatcher = WAITING_TO_LOCK_PATTERN.matcher(line);
                 if (waitingToLockMatcher.matches()) {
                     String lockId = waitingToLockMatcher.group(1);
                     String className = waitingToLockMatcher.group(2);
                     currentLocks.add(new LockInfo(lockId, className, LockInfo.LockOperation.WAITING_TO_LOCK));
-                    continue;
                 }
-                // Try waiting on pattern
-                Matcher waitingMatcher = WAITING_ON_PATTERN.matcher(line);
-                if (waitingMatcher.matches()) {
-                    String lockId = waitingMatcher.group(1);
-                    String className = waitingMatcher.group(2);
+                continue;
+            }
+            if (line.contains("- waiting on")) {
+                Matcher waitingOnMatcher = WAITING_ON_PATTERN.matcher(line);
+                if (waitingOnMatcher.matches()) {
+                    String lockId = waitingOnMatcher.group(1);
+                    String className = waitingOnMatcher.group(2);
                     currentLocks.add(new LockInfo(lockId, className, LockInfo.LockOperation.WAITING_ON));
                 }
                 continue;
@@ -689,6 +995,15 @@ public final class ThreadDumpParser {
                 String className = lockedMatcher.group(2);
                 currentLocks.add(new LockInfo(lockId, className, LockInfo.LockOperation.LOCKED));
                 continue;
+            }
+
+            // Parse lock info - parking (SAP deadlock stack uses parking)
+            Matcher parkingMatcher = PARKING_PATTERN.matcher(line);
+            if (parkingMatcher.matches()) {
+                String lockId = parkingMatcher.group(1);
+                String className = parkingMatcher.group(2);
+                String ownerThreadId = parkingMatcher.group(3);
+                currentLocks.add(new LockInfo(lockId, className, LockInfo.LockOperation.PARKING, ownerThreadId));
             }
         }
 
@@ -719,33 +1034,6 @@ public final class ThreadDumpParser {
                 ));
                 break;
             }
-        }
-    }
-
-    private static @Nullable Instant tryParseTimestamp(String line) {
-        String trimmed = line == null ? "" : line.trim();
-        if (trimmed.isEmpty()) {
-            return null;
-        }
-
-        // Common formats seen in practice:
-        // - 2024-01-15 10:30:45
-        // - 2024-01-15T10:30:45Z
-        // - 2024-01-15T10:30:45.123Z
-        try {
-            if (trimmed.contains("T") && (trimmed.endsWith("Z") || trimmed.contains("+") || trimmed.contains("-"))) {
-                return Instant.parse(trimmed);
-            }
-        } catch (DateTimeParseException ignored) {
-            // fall back to local date-time parsing
-        }
-
-        try {
-            // Treat local timestamps as system default zone for reproducibility within an environment.
-            LocalDateTime ldt = LocalDateTime.parse(trimmed, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            return ldt.atZone(ZoneId.systemDefault()).toInstant();
-        } catch (DateTimeParseException ignored) {
-            return null;
         }
     }
 }

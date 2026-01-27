@@ -12,7 +12,7 @@ public final class ThreadInfoBuilder {
     private Long threadId;
     private Long nativeId;
     private Integer priority;
-    private Boolean daemon;
+    private Boolean daemon = false;
     private Thread.State state;
     private Double cpuTimeSec;
     private Double elapsedTimeSec;
@@ -113,5 +113,13 @@ public final class ThreadInfoBuilder {
                 additionalInfo,
                 carryingVirtualThreadId
         );
+    }
+
+    public Thread.State state() {
+        return state;
+    }
+
+    public Integer priority() {
+        return priority;
     }
 }

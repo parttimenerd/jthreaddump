@@ -77,49 +77,7 @@ public class Main {
     }
 
     private void outputText(ThreadDump dump) {
-        System.out.println("Total Threads: " + dump.threads().size());
-        System.out.println();
-
-        // Thread state summary
-        var stateCount = dump.threads().stream()
-                .filter(t -> t.state() != null)
-                .collect(java.util.stream.Collectors.groupingBy(
-                        me.bechberger.jthreaddump.model.ThreadInfo::state,
-                        java.util.stream.Collectors.counting()
-                ));
-
-        if (!stateCount.isEmpty()) {
-            System.out.println("Thread States:");
-            stateCount.forEach((state, count) ->
-                    System.out.printf("  %s: %d%n", state, count)
-            );
-            System.out.println();
-        }
-
-        // JNI info
-        if (dump.jniInfo() != null) {
-            System.out.println("JNI Resources:");
-            var jni = dump.jniInfo();
-            if (jni.globalRefs() != null) {
-                System.out.println("  Global refs: " + jni.globalRefs());
-            }
-            if (jni.weakRefs() != null) {
-                System.out.println("  Weak refs: " + jni.weakRefs());
-            }
-            if (jni.globalRefsMemory() != null) {
-                System.out.println("  Global refs memory: " + jni.globalRefsMemory());
-            }
-            if (jni.weakRefsMemory() != null) {
-                System.out.println("  Weak refs memory: " + jni.weakRefsMemory());
-            }
-            System.out.println();
-        }
-
-        // Deadlocks
-        if (dump.deadlockInfos() != null && !dump.deadlockInfos().isEmpty()) {
-            System.out.println("⚠️  DEADLOCKS DETECTED: " + dump.deadlockInfos().size());
-            System.out.println();
-        }
+        System.err.println(dump);
     }
 
     private void printThread(me.bechberger.jthreaddump.model.ThreadInfo thread) {

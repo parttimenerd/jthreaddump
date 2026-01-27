@@ -634,10 +634,12 @@ def _prepare_minimal_workspace(project_root: Path, tmp: Optional[Path]) -> Path:
     pom_path = tmp_dir / "pom.xml"
     pom_path.write_text(_make_minimal_pom(pom_path.read_text()))
 
-    # Patch Java sources
-    java_root = tmp_dir / "src" / "main" / "java"
-    for jf in java_root.rglob("*.java"):
-        jf.write_text(_strip_minimal_java_source(jf.read_text()))
+    # Patch Java sources (main + tests)
+    for java_root in [tmp_dir / "src" / "main" / "java", tmp_dir / "src" / "test" / "java"]:
+        if not java_root.exists():
+            continue
+        for jf in java_root.rglob("*.java"):
+            jf.write_text(_strip_minimal_java_source(jf.read_text()))
 
     return tmp_dir
 

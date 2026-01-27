@@ -1,0 +1,38 @@
+Thread dump triggered at 2013-02-11 10:47:04
+Full thread dump SAP Java Server VM (6.1.036 19.1-b02 Dec  6 2011 10:47:23 - 61_REL - optU - hpux parisc - 6 - bas2:163920 (mixed mode)):
+
+"Attach Listener" daemon cpu=1.54 [reset 1.54] ms allocated=16288 B (15.91 kB) [reset 16288 B (15.91 kB)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ]
+prio=5 tid=0x8000000100e7adf8 nid=0x4aafae / 4894638  pthread-id=32 waiting on condition  [_thread_blocked (_at_safepoint), stack(0x800003ffac700000,0x800003ffac800000)] [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"DatagramSocket sender" cpu=52212.99 [reset 52212.99] ms allocated=92238584 B (87.97 MB) [reset 92238584 B (87.97 MB)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/23052630000 B, files opened:0, socks opened:1  [reset file i/o: 0/0 B, net i/o: 0/23052630000 B, files opened:0, socks opened:1 ]
+prio=5 tid=0x800000010037f770 nid=0x4aafac / 4894636  pthread-id=31 runnable  [_thread_blocked (_at_safepoint), stack(0x800003ffac800000,0x800003ffac900000)] [0x800003ffac800000]
+   java.lang.Thread.State: RUNNABLE
+	at java.net.PlainDatagramSocketImpl.send(Ljava/net/DatagramPacket;)V(Native Method)
+	at java.net.DatagramSocket.send(Ljava/net/DatagramPacket;)V(DatagramSocket.java:625)
+	- locked <0x80000300308cd478> (a java.net.DatagramPacket)
+	at SimpleLock$12$1.run()V(SimpleLock.java:277)
+
+   Locked ownable synchronizers:
+	- None
+
+"DatagramSocket receiver" cpu=29335.35 [reset 29335.35] ms allocated=82512360 B (78.69 MB) [reset 82512360 B (78.69 MB)] defined_classes=9
+io= file i/o: 880/0 B, net i/o: 11454860000/0 B, files opened:1, socks opened:3  [reset file i/o: 880/0 B, net i/o: 11454860000/0 B, files opened:1, socks opened:3 ]
+prio=5 tid=0x8000000100c71208 nid=0x4aafab / 4894635  pthread-id=30 runnable  [_thread_in_native (_at_safepoint), stack(0x800003ffac900000,0x800003ffaca00000)] [0x800003ffac900000]
+   java.lang.Thread.State: RUNNABLE
+	at java.net.PlainDatagramSocketImpl.receive0(Ljava/net/DatagramPacket;)V(Native Method)
+	- locked <0x8000030005800188> (a java.net.PlainDatagramSocketImpl)
+	at java.net.PlainDatagramSocketImpl.receive(Ljava/net/DatagramPacket;)V(PlainDatagramSocketImpl.java:145)
+	- locked <0x8000030005800188> (a java.net.PlainDatagramSocketImpl)
+	at java.net.DatagramSocket.receive(Ljava/net/DatagramPacket;)V(DatagramSocket.java:725)
+	- locked <0x80000300058001c8> (a java.net.DatagramSocket)
+	- locked <0x80000300308d14f8> (a java.net.DatagramPacket)
+	at SimpleLock$12.run()V(SimpleLock.java:291)
+
+   Locked ownable synchronizers:
+	- None

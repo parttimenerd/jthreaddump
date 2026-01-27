@@ -1,0 +1,235 @@
+Thread dump triggered at 2026-01-27 20:45:13
+Full thread dump SAP Java Server VM (8.1.108 11.0.30+000 Jan 16 2026 19:39:58 - 81_REL - optU - windows amd64 - 6 - bas2:343998 (mixed mode)):
+
+Threads class SMR info:
+_java_thread_list=0x000001926ca58100, length=17, elements={
+0x0000019255649000, 0x00000192681f8800, 0x00000192681ff000, 0x000001926841e000,
+0x000001926841f000, 0x0000019268429800, 0x000001926842b000, 0x0000019268431000,
+0x0000019268432800, 0x000001926844e800, 0x000001926bd49000, 0x000001926bd4c000,
+0x000001926bd86800, 0x000001926ca72000, 0x000001926cae4000, 0x000001926c293000,
+0x000001926bf90000
+}
+
+"main" #1 prio=5 os_prio=0 cpu=62.50 [reset 62.50] ms elapsed=396.66 [reset 396.66] s allocated=659712 B (644.25 KB) [reset 659712 B (644.25 KB)] defined_classes=548
+io= file i/o: 1130204/0 B, net i/o: 0/0 B, files opened:5, socks opened:0  [reset file i/o: 1130204/0 B, net i/o: 0/0 B, files opened:5, socks opened:0 ] 
+tid=0x0000019255649000 nid=0x81f4 / 33268 runnable   [_thread_in_native (_at_safepoint), stack(0x00000014bb800000,0x00000014bb900000)] [0x00000014bb8fe000]
+   java.lang.Thread.State: RUNNABLE
+	at java.io.FileInputStream.readBytes([BII)I(Native Method)
+	at java.io.FileInputStream.read([BII)I(FileInputStream.java:255)
+	at java.io.BufferedInputStream.fill()V(BufferedInputStream.java:246)
+	at java.io.BufferedInputStream.read1([BII)I(BufferedInputStream.java:286)
+	at java.io.BufferedInputStream.read([BII)I(BufferedInputStream.java:345)
+	- locked <0x00000000eaf0a148> (a java.io.BufferedInputStream)
+	at java.io.FilterInputStream.read([BII)I(FilterInputStream.java:143)
+	at java.io.PushbackInputStream.read([BII)I(PushbackInputStream.java:186)
+	at java.util.zip.ZipInputStream.readFully([BII)V(ZipInputStream.java:403)
+	at java.util.zip.ZipInputStream.readLOC()Ljava/util/zip/ZipEntry;(ZipInputStream.java:278)
+	at java.util.zip.ZipInputStream.getNextEntry()Ljava/util/zip/ZipEntry;(ZipInputStream.java:122)
+	at sun.tools.jar.Main.extract(Ljava/io/InputStream;[Ljava/lang/String;)V(Main.java:991)
+	at sun.tools.jar.Main.run([Ljava/lang/String;)Z(Main.java:317)
+	- locked <0x00000000eaf0a5c8> (a sun.tools.jar.Main)
+	at sun.tools.jar.Main.main([Ljava/lang/String;)V(Main.java:1311)
+
+"Reference Handler" #2 daemon prio=10 os_prio=2 cpu=0.00 [reset 0.00] ms elapsed=396.64 [reset 396.64] s allocated=0 B (0 B) [reset 0 B (0 B)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x00000192681f8800 nid=0x5bbc / 23484 waiting on condition   [_thread_blocked (_at_safepoint), stack(0x00000014bbb00000,0x00000014bbc00000)] [0x00000014bbbff000]
+   java.lang.Thread.State: RUNNABLE
+	at java.lang.ref.Reference.waitForReferencePendingList()V(Native Method)
+	at java.lang.ref.Reference.processPendingReferences()V(Reference.java:167)
+	at java.lang.ref.Reference.access$000()V(Reference.java:42)
+	at java.lang.ref.Reference$ReferenceHandler.run()V(Reference.java:141)
+
+"Finalizer" #3 daemon prio=8 os_prio=1 cpu=0.00 [reset 0.00] ms elapsed=396.63 [reset 396.63] s allocated=0 B (0 B) [reset 0 B (0 B)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x00000192681ff000 nid=0x7624 / 30244 in Object.wait()   [_thread_blocked (_at_safepoint), stack(0x00000014bbc00000,0x00000014bbd00000)] [0x00000014bbcff000]
+   java.lang.Thread.State: WAITING (on object monitor)
+	at java.lang.Object.wait(J)V(Native Method)
+	- waiting on <0x00000000eaf2e248> (a java.lang.ref.ReferenceQueue$Lock)
+	at java.lang.ref.ReferenceQueue.remove(J)Ljava/lang/ref/Reference;(ReferenceQueue.java:152)
+	- waiting to re-lock in wait() <0x00000000eaf2e248> (a java.lang.ref.ReferenceQueue$Lock)
+	at java.lang.ref.ReferenceQueue.remove()Ljava/lang/ref/Reference;(ReferenceQueue.java:173)
+	at java.lang.ref.Finalizer$FinalizerThread.run()V(Finalizer.java:173)
+
+"Signal Dispatcher" #4 daemon prio=9 os_prio=2 cpu=0.00 [reset 0.00] ms elapsed=396.62 [reset 396.62] s allocated=0 B (0 B) [reset 0 B (0 B)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x000001926841e000 nid=0x1950 / 6480 runnable   [_thread_blocked (_at_safepoint), stack(0x00000014bbd00000,0x00000014bbe00000)] [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"Attach Listener" #5 daemon prio=5 os_prio=2 cpu=203.13 [reset 203.13] ms elapsed=396.62 [reset 396.62] s allocated=4196072 B (4.00 MB) [reset 4196072 B (4.00 MB)] defined_classes=947
+io= file i/o: 1627109/0 B, net i/o: 0/0 B, files opened:1, socks opened:1  [reset file i/o: 1627109/0 B, net i/o: 0/0 B, files opened:1, socks opened:1 ] 
+tid=0x000001926841f000 nid=0x4288 / 17032 runnable   [_thread_blocked (_at_safepoint), stack(0x00000014bbe00000,0x00000014bbf00000)] [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"Service Thread" #6 daemon prio=9 os_prio=0 cpu=0.00 [reset 0.00] ms elapsed=396.60 [reset 396.60] s allocated=0 B (0 B) [reset 0 B (0 B)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x0000019268429800 nid=0x18e0 / 6368 runnable   [_thread_blocked (_at_safepoint), stack(0x00000014bbf00000,0x00000014bc000000)] [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"C2 CompilerThread0" #7 daemon prio=9 os_prio=2 cpu=15.63 [reset 15.63] ms elapsed=396.60 [reset 396.60] s allocated=0 B (0 B) [reset 0 B (0 B)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x000001926842b000 nid=0x1a8 / 424 waiting on condition   [_thread_blocked (_at_safepoint), stack(0x00000014bc000000,0x00000014bc100000)] [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+   No compile task
+
+"C1 CompilerThread0" #15 daemon prio=9 os_prio=2 cpu=46.88 [reset 46.88] ms elapsed=396.60 [reset 396.60] s allocated=1656 B (1.62 KB) [reset 1656 B (1.62 KB)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x0000019268431000 nid=0x6f14 / 28436 runnable   [_thread_blocked (_at_safepoint), stack(0x00000014bc100000,0x00000014bc200000)] [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+   Compiling:  615         3       java.io.ObjectInputStream$BlockDataInputStream::peek()I (55 bytes)
+
+"Sweeper thread" #19 daemon prio=9 os_prio=2 cpu=0.00 [reset 0.00] ms elapsed=396.60 [reset 396.60] s allocated=0 B (0 B) [reset 0 B (0 B)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x0000019268432800 nid=0x1218 / 4632 runnable   [_thread_blocked (_at_safepoint), stack(0x00000014bc200000,0x00000014bc300000)] [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"Server: sap_jvm_profiling_server_34384" #20 daemon prio=10 os_prio=0 cpu=0.00 [reset 0.00] ms elapsed=396.60 [reset 396.60] s allocated=0 B (0 B) [reset 0 B (0 B)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x000001926844e800 nid=0xd88 / 3464 runnable   [_thread_in_native (_at_safepoint), stack(0x00000014bc300000,0x00000014bc400000)] [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"JDWP Event Helper Thread" #22 daemon prio=10 os_prio=0 cpu=0.00 [reset 0.00] ms elapsed=396.60 [reset 396.60] s allocated=0 B (0 B) [reset 0 B (0 B)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x000001926bd49000 nid=0x8704 / 34564 runnable   [_thread_blocked (_at_safepoint), stack(0x00000014bc500000,0x00000014bc600000)] [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"JDWP Transport Listener: dt_socket" #23 daemon prio=10 os_prio=0 cpu=0.00 [reset 0.00] ms elapsed=396.60 [reset 396.60] s allocated=0 B (0 B) [reset 0 B (0 B)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x000001926bd4c000 nid=0xa58 / 2648 waiting on condition   [_thread_blocked (_at_safepoint), stack(0x00000014bc600000,0x00000014bc700000)] [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"Control Handler" #24 daemon prio=10 os_prio=2 cpu=0.00 [reset 0.00] ms elapsed=396.60 [reset 396.60] s allocated=0 B (0 B) [reset 0 B (0 B)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x000001926bd86800 nid=0x1b54 / 6996 runnable   [_thread_blocked (_at_safepoint), stack(0x00000014bc900000,0x00000014bca00000)] [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"RMI TCP Accept-0" #26 daemon prio=5 os_prio=0 cpu=78.13 [reset 78.13] ms elapsed=372.77 [reset 372.77] s allocated=51752 B (50.54 KB) [reset 51752 B (50.54 KB)] defined_classes=5
+io= file i/o: 8153/0 B, net i/o: 0/0 B, files opened:0, socks opened:2  [reset file i/o: 8153/0 B, net i/o: 0/0 B, files opened:0, socks opened:2 ] 
+tid=0x000001926ca72000 nid=0x6ee8 / 28392 runnable   [_thread_in_native (_at_safepoint), stack(0x00000014bd000000,0x00000014bd100000)] [0x00000014bd0fe000]
+   java.lang.Thread.State: RUNNABLE
+	at java.net.DualStackPlainSocketImpl.accept0(I[Ljava/net/InetSocketAddress;)I(Native Method)
+	at java.net.DualStackPlainSocketImpl.socketAccept(Ljava/net/SocketImpl;)V(DualStackPlainSocketImpl.java:128)
+	at java.net.AbstractPlainSocketImpl.accept(Ljava/net/SocketImpl;)V(AbstractPlainSocketImpl.java:535)
+	at java.net.PlainSocketImpl.accept(Ljava/net/SocketImpl;)V(PlainSocketImpl.java:190)
+	- locked <0x00000000eabdc698> (a java.net.SocksSocketImpl)
+	at java.net.ServerSocket.implAccept(Ljava/net/Socket;)V(ServerSocket.java:545)
+	at java.net.ServerSocket.accept()Ljava/net/Socket;(ServerSocket.java:513)
+	at sun.management.jmxremote.LocalRMIServerSocketFactory$1.accept()Ljava/net/Socket;(LocalRMIServerSocketFactory.java:52)
+	at sun.rmi.transport.tcp.TCPTransport$AcceptLoop.executeAcceptLoop()V(TCPTransport.java:405)
+	at sun.rmi.transport.tcp.TCPTransport$AcceptLoop.run()V(TCPTransport.java:377)
+	at java.lang.Thread.run()V(Thread.java:838)
+
+"RMI Scheduler(0)" #28 daemon prio=5 os_prio=0 cpu=0.00 [reset 0.00] ms elapsed=372.26 [reset 372.26] s allocated=792 B (792 B) [reset 792 B (792 B)] defined_classes=1
+io= file i/o: 1551/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 1551/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x000001926cae4000 nid=0x67a4 / 26532 waiting on condition   [_thread_blocked (_at_safepoint), stack(0x00000014bd200000,0x00000014bd300000)] [0x00000014bd2fe000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(ZJ)V(Native Method)
+	- parking to wait for  <0x00000000c00af638> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+	at sun.misc.Unsafe.park(ZJ)V(Unsafe.java:1079)
+	at java.util.concurrent.locks.LockSupport.parkNanos(Ljava/lang/Object;J)V(LockSupport.java:215)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos(J)J(AbstractQueuedSynchronizer.java:2078)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take()Ljava/util/concurrent/RunnableScheduledFuture;(ScheduledThreadPoolExecutor.java:1120)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take()Ljava/lang/Object;(ScheduledThreadPoolExecutor.java:836)
+	at java.util.concurrent.ThreadPoolExecutor.getTask()Ljava/lang/Runnable;(ThreadPoolExecutor.java:1074)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(Ljava/util/concurrent/ThreadPoolExecutor$Worker;)V(ThreadPoolExecutor.java:1134)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run()V(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run()V(Thread.java:838)
+
+"RMI TCP Connection(2)-10.65.218.67" #31 daemon prio=5 os_prio=0 cpu=0.00 [reset 0.00] ms elapsed=0.00 [reset 0.00] s allocated=76536 B (74.74 KB) [reset 76536 B (74.74 KB)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 1390/873 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 1390/873 B, files opened:0, socks opened:0 ] 
+tid=0x000001926c293000 nid=0x2584 / 9604 waiting on condition   [_thread_blocked (_at_safepoint), stack(0x00000014bb700000,0x00000014bb800000)] [0x00000014bb7fa000]
+   java.lang.Thread.State: RUNNABLE
+	at sun.management.DiagnosticCommandImpl.executeDiagnosticCommand(Ljava/lang/String;)Ljava/lang/String;(Native Method)
+	at sun.management.DiagnosticCommandImpl.access$000(Lsun/management/DiagnosticCommandImpl;Ljava/lang/String;)Ljava/lang/String;(DiagnosticCommandImpl.java:40)
+	at sun.management.DiagnosticCommandImpl$Wrapper.execute([Ljava/lang/String;)Ljava/lang/String;(DiagnosticCommandImpl.java:128)
+	at sun.management.DiagnosticCommandImpl.invoke(Ljava/lang/String;[Ljava/lang/Object;[Ljava/lang/String;)Ljava/lang/Object;(DiagnosticCommandImpl.java:230)
+	at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.invoke(Ljavax/management/ObjectName;Ljava/lang/String;[Ljava/lang/Object;[Ljava/lang/String;)Ljava/lang/Object;(DefaultMBeanServerInterceptor.java:819)
+	at com.sun.jmx.mbeanserver.JmxMBeanServer.invoke(Ljavax/management/ObjectName;Ljava/lang/String;[Ljava/lang/Object;[Ljava/lang/String;)Ljava/lang/Object;(JmxMBeanServer.java:801)
+	at javax.management.remote.rmi.RMIConnectionImpl.doOperation(I[Ljava/lang/Object;)Ljava/lang/Object;(RMIConnectionImpl.java:1468)
+	at javax.management.remote.rmi.RMIConnectionImpl.access$300(Ljavax/management/remote/rmi/RMIConnectionImpl;I[Ljava/lang/Object;)Ljava/lang/Object;(RMIConnectionImpl.java:76)
+	at javax.management.remote.rmi.RMIConnectionImpl$PrivilegedOperation.run()Ljava/lang/Object;(RMIConnectionImpl.java:1309)
+	at javax.management.remote.rmi.RMIConnectionImpl.doPrivilegedOperation(I[Ljava/lang/Object;Ljavax/security/auth/Subject;)Ljava/lang/Object;(RMIConnectionImpl.java:1401)
+	at javax.management.remote.rmi.RMIConnectionImpl.invoke(Ljavax/management/ObjectName;Ljava/lang/String;Ljava/rmi/MarshalledObject;[Ljava/lang/String;Ljavax/security/auth/Subject;)Ljava/lang/Object;(RMIConnectionImpl.java:829)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Ljava/lang/reflect/Method;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;(Method.java:498)
+	at sun.rmi.server.UnicastServerRef.dispatch(Ljava/rmi/Remote;Ljava/rmi/server/RemoteCall;)V(UnicastServerRef.java:357)
+	at sun.rmi.transport.Transport$1.run()Ljava/lang/Void;(Transport.java:200)
+	at sun.rmi.transport.Transport$1.run()Ljava/lang/Object;(Transport.java:197)
+	at java.security.AccessController.doPrivileged(Ljava/security/PrivilegedExceptionAction;Ljava/security/AccessControlContext;)Ljava/lang/Object;(Native Method)
+	at sun.rmi.transport.Transport.serviceCall(Ljava/rmi/server/RemoteCall;)Z(Transport.java:196)
+	at sun.rmi.transport.tcp.TCPTransport.handleMessages(Lsun/rmi/transport/Connection;Z)V(TCPTransport.java:573)
+	at sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run0()V(TCPTransport.java:834)
+	at sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.lambda$run$0()Ljava/lang/Void;(TCPTransport.java:688)
+	at sun.rmi.transport.tcp.TCPTransport$ConnectionHandler$$Lambda$4/0x00000001000eb840.run()Ljava/lang/Object;(Unknown Source)
+	at java.security.AccessController.doPrivileged(Ljava/security/PrivilegedAction;Ljava/security/AccessControlContext;)Ljava/lang/Object;(Native Method)
+	at sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run()V(TCPTransport.java:687)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(Ljava/util/concurrent/ThreadPoolExecutor$Worker;)V(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run()V(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run()V(Thread.java:838)
+
+"JMX server connection timeout 32" #32 daemon prio=5 os_prio=0 cpu=0.00 [reset 0.00] ms elapsed=0.00 [reset 0.00] s allocated=776 B (776 B) [reset 776 B (776 B)] defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x000001926bf90000 nid=0x1c9c / 7324 in Object.wait()   [_thread_blocked (_at_safepoint), stack(0x00000014bc400000,0x00000014bc500000)] [0x00000014bc4ff000]
+   java.lang.Thread.State: TIMED_WAITING (on object monitor)
+	at java.lang.Object.wait(J)V(Native Method)
+	- waiting on <0x00000000ead2b3f0> (a [I)
+	at com.sun.jmx.remote.internal.ServerCommunicatorAdmin$Timeout.run()V(ServerCommunicatorAdmin.java:168)
+	- waiting to re-lock in wait() <0x00000000ead2b3f0> (a [I)
+	at java.lang.Thread.run()V(Thread.java:838)
+
+"VM Thread" os_prio=2 cpu=46.88 [reset 46.88] ms elapsed=396.65 [reset 396.65] s  defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x00000192683e9800 nid=0x4a58 / 19032 runnable  
+
+"ParGC Thread#0" os_prio=0 cpu=0.00 [reset 0.00] ms elapsed=396.66 [reset 396.66] s  defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x000001925574a000 nid=0x1f14 / 7956 runnable  
+
+"ParGC Thread#1" os_prio=0 cpu=0.00 [reset 0.00] ms elapsed=372.77 [reset 372.77] s  defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x000001926c2d2800 nid=0x65b0 / 26032 runnable  
+
+"VM Periodic Task Thread" os_prio=2 cpu=734.38 [reset 734.38] ms elapsed=396.60 [reset 396.60] s  defined_classes=0
+io= file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0  [reset file i/o: 0/0 B, net i/o: 0/0 B, files opened:0, socks opened:0 ] 
+tid=0x000001926bd83800 nid=0x3704 / 14084 waiting on condition  
+
+Monitors:
+  <0x00000000ead2b3f0> (a int[]) monitor=0x00000192683f3c80 wait count=1 recursions=0 
+owner=0x0000000000000000 
+    responsible: NULL (0x0000000000000000)
+    successor: NULL (0x0000000000000000)
+    CXQ: Empty
+    EntryList: Empty
+    WaitSet (1 waiter):
+      "JMX server connection timeout 32" tid=0x000001926bf90000 parked (1) event=-1 notified=false
+  <0x00000000eaf2e248> (a java.lang.ref.ReferenceQueue$Lock) monitor=0x00000192683efd80 wait count=1 recursions=0 
+owner=0x0000000000000000 
+    responsible: NULL (0x0000000000000000)
+    successor: NULL (0x0000000000000000)
+    CXQ: Empty
+    EntryList: Empty
+    WaitSet (1 waiter):
+      "Finalizer" tid=0x00000192681ff000 parked (1) event=-1 notified=false
+
+Information about alerts happening during the 397.04 seconds the VM is running
+    No alert for: Spurious wakeup
+    No alert for: OutOfMemoryError
+    No alert for: Thread.stop()
+    No alert for: StackOverflowError
+    No alert for: Profiling started
+    No alert for: Profiling stopped
+    No alert for: Debugging started
+    No alert for: Debugging stopped
+    No alert for: Rainy Day Fund used
+    No alert for: UnsatisfiedLinkError
+    No alert for: Java assert
+    No alert for: InternalError
+    No alert for: JIT stopped
+    No alert for: JIT restarted
+    No alert for: Code cache flushing
+    No alert for: Code cache is full
+    No alert for: Native thread creation failed
+
+JNI global refs: 47, weak refs: 1492
+
