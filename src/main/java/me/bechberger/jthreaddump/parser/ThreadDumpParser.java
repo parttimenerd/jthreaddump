@@ -112,9 +112,17 @@ public final class ThreadDumpParser {
         boolean inDeadlockSection = false;
         boolean isReverseOrder = false; // Track if file is in reverse order
         boolean parsedTimestamp = false;
+        boolean skippedPidPrefix = false;
 
         while ((line = reader.readLine()) != null) {
             line = line.trim();
+
+            // Some thread dumps start with a PID prefix line like "26242:".
+            // If present, ignore it and continue looking for the first real timestamp line.
+            if (!parsedTimestamp && !skippedPidPrefix && line.matches("\\d+:")) {
+                skippedPidPrefix = true;
+                continue;
+            }
 
             if (!parsedTimestamp) {
                 Instant parsed = tryParseTimestamp(line);

@@ -752,5 +752,15 @@ class ThreadDumpParserTest {
         String content = loadResource("thread-dump-minimal.txt");
         ThreadDump parsed = ThreadDumpParser.parse(content);
         assertNull(parsed.timestamp(), "When no timestamp is present in input, timestamp must be null (never guessed)");
+        // but one thread
+        assertEquals(1, parsed.threads().size(), "There should be one thread parsed");
+    }
+
+    @Test
+    void testTimestampParsingWithProcessId() throws IOException {
+        String content = loadResource("thread-dump-minimal2.txt");
+        ThreadDump parsed = ThreadDumpParser.parse(content);
+        assertEquals(parsed.timestamp(), Instant.parse("2024-01-15T09:35:20Z"));
+        assertEquals(1, parsed.threads().size(), "There should be one thread parsed");
     }
 }

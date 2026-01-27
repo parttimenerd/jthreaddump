@@ -7,12 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-### Changed
-### Deprecated
-### Removed
 ### Fixed
-### Security
+- Proper handling of jcmd related thread dumps (skipping process id in first line)
 
 ## [0.5.4] - 2026-01-27
 
