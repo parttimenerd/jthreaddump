@@ -478,20 +478,23 @@ def _strip_minimal_java_source(content: str) -> str:
         if re.match(r"^[ \t]*import[ \t]+com\.fasterxml\.jackson\.annotation\..*;[ \t]*\r?\n?$", line):
             continue
 
-        # Remove JetBrains Nullable import
-        if re.match(r"^[ \t]*import[ \t]+org\.jetbrains\.annotations\.Nullable[ \t]*;[ \t]*\r?\n?$", line):
+        # Remove JetBrains Nullable import (be forgiving with whitespace)
+        if re.match(r"^[ \t]*import[ \t]+org\.jetbrains\.annotations\.Nullable\s*;\s*\r?\n?$", line):
             continue
 
         # Remove @Json* annotations (lines starting with @Json...)
         if re.match(r"^[ \t]*@Json\w*\b.*\r?\n?$", line):
             continue
 
-        # Remove standalone @Nullable annotation lines
-        if re.match(r"^[ \t]*@Nullable\b[ \t]*\r?\n?$", line):
-            continue
+        # Never drop whole lines for @Nullable: just remove the token wherever it appears.
+        # This keeps lines like: "private static @Nullable Instant foo()" intact.
+        line = re.sub(r"@Nullable", "", line)
 
-        # Remove @Nullable occurrences (e.g. '@Nullable String x', 'Map<@Nullable String, ...>')
-        line = re.sub(r"\b@Nullable\b", "", line)
+        # Clean up whitespace introduced by removing the annotation.
+        # Only normalize within the line; preserve indentation and newlines.
+        line = re.sub(r"([ \t]{2,})", " ", line)
+        line = re.sub(r"\s+([,;>)])", r"\1", line)  # no space before punctuation
+        line = re.sub(r"([(<])\s+", r"\1", line)     # no space after opening bracket/paren
 
         out_lines.append(line)
 
@@ -604,7 +607,11 @@ def _make_minimal_pom(pom_content: str) -> str:
         return xml[: m.start(1)] + plugin_block_new + xml[m.end(1) :]
 
     pom_content = _ensure_compiler_g_none(pom_content)
+    return pom_content
 
+
+def _prepare_minimal_workspace(project_root: Path, tmp: Optional[Path]) -> Path:
+    """Create a rewritten workspace for the minimal artifact and return its root directory."""
     import shutil
     import tempfile
 
@@ -628,11 +635,58 @@ def _make_minimal_pom(pom_content: str) -> str:
     pom_path.write_text(_make_minimal_pom(pom_path.read_text()))
 
     # Patch Java sources
-    java_files = list((tmp_dir / "src" / "main" / "java").rglob("*.java"))
-    for jf in java_files:
+    java_root = tmp_dir / "src" / "main" / "java"
+    for jf in java_root.rglob("*.java"):
         jf.write_text(_strip_minimal_java_source(jf.read_text()))
 
     return tmp_dir
+
+
+def build_minimal(project_root: Path, tmp: Optional[Path], keep_tmp: bool, skip_tests: bool) -> int:
+    """Build the minimal variant and copy the resulting jar into the main project's target/ folder."""
+    import shutil
+
+    tmp_dir = None
+    try:
+        tmp_dir = _prepare_minimal_workspace(project_root, tmp)
+
+        if not skip_tests:
+            test = subprocess.run(["mvn", "clean", "test"], cwd=tmp_dir)
+            if test.returncode != 0:
+                return test.returncode
+
+        pkg = subprocess.run(["mvn", "clean", "package"], cwd=tmp_dir)
+        if pkg.returncode != 0:
+            return pkg.returncode
+
+        # Find the built minimal jar and copy it to the original target/
+        built_jar = tmp_dir / "target" / "jthreaddump-minimal.jar"
+        if not built_jar.exists():
+            # Fallback: try to locate jar by name
+            candidates = list((tmp_dir / "target").glob("*minimal*.jar"))
+            if candidates:
+                built_jar = candidates[0]
+
+        if not built_jar.exists():
+            print(f"❌ Minimal jar not found in {tmp_dir / 'target'}")
+            return 1
+
+        out_dir = project_root / "target"
+        out_dir.mkdir(exist_ok=True)
+        shutil.copy2(built_jar, out_dir / "jthreaddump-minimal.jar")
+        print(f"✓ Copied minimal jar to {out_dir / 'jthreaddump-minimal.jar'}")
+
+        return 0
+    finally:
+        if tmp_dir is None:
+            return
+        if keep_tmp:
+            print(f"\nℹ Keeping temporary directory: {tmp_dir}")
+        else:
+            try:
+                shutil.rmtree(tmp_dir)
+            except Exception:
+                pass
 
 
 def test_minimal(project_root: Path, tmp: Optional[Path], keep_tmp: bool) -> int:
