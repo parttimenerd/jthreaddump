@@ -11,6 +11,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -270,6 +272,12 @@ class ThreadDumpParserTest {
     void testParseJstackDetailed() throws IOException {
         String content = loadResource("thread-dump-jstack.txt");
         ThreadDump parsed = ThreadDumpParser.parse(content);
+
+        Instant expectedTimestamp = LocalDateTime
+                .parse("2024-01-15 10:30:45", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                .atZone(ZoneId.systemDefault())
+                .toInstant();
+        assertEquals(expectedTimestamp, parsed.timestamp(), "Timestamp should be parsed from the first line");
 
         ThreadDump expected = new ThreadDump(
                 parsed.timestamp(),
@@ -541,6 +549,12 @@ class ThreadDumpParserTest {
         String content = loadResource("thread-dump-jcmd.txt");
         ThreadDump parsed = ThreadDumpParser.parse(content);
 
+        Instant expectedTimestamp = LocalDateTime
+                .parse("2024-01-15 10:35:20", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                .atZone(ZoneId.systemDefault())
+                .toInstant();
+        assertEquals(expectedTimestamp, parsed.timestamp(), "Timestamp should be parsed from the first line");
+
         ThreadDump expected = new ThreadDump(
                 parsed.timestamp(),
                 "Thread dump from jcmd 12345 Thread.print:",
@@ -731,5 +745,12 @@ class ThreadDumpParserTest {
             }
             return new String(is.readAllBytes(), StandardCharsets.UTF_8);
         }
+    }
+
+    @Test
+    void testTimestampAbsentIsNull() throws IOException {
+        String content = loadResource("thread-dump-minimal.txt");
+        ThreadDump parsed = ThreadDumpParser.parse(content);
+        assertNull(parsed.timestamp(), "When no timestamp is present in input, timestamp must be null (never guessed)");
     }
 }

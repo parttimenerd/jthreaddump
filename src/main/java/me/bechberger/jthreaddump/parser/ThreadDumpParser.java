@@ -6,7 +6,9 @@ import org.jetbrains.annotations.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.time.Instant;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -97,7 +99,7 @@ public final class ThreadDumpParser {
     public static ThreadDump parse(String content) throws IOException {
         BufferedReader reader = new BufferedReader(new StringReader(content));
 
-        Instant timestamp = Instant.now(); // Default to now, override if found
+        Instant timestamp = null; // Only set if found, never guess
         String jvmInfo = null;
         String sourceType = detectSourceType(content);
         List<ThreadInfo> threads = new ArrayList<>();
@@ -109,9 +111,23 @@ public final class ThreadDumpParser {
         ThreadInfoBuilder pendingInfo = null; // For state/stack info appearing before thread header
         boolean inDeadlockSection = false;
         boolean isReverseOrder = false; // Track if file is in reverse order
+        boolean parsedTimestamp = false;
 
         while ((line = reader.readLine()) != null) {
             line = line.trim();
+
+            if (!parsedTimestamp) {
+                Instant parsed = tryParseTimestamp(line);
+                if (parsed != null) {
+                    timestamp = parsed;
+                    parsedTimestamp = true;
+                    continue;
+                }
+                // Don't try again if the first non-empty line isn't a timestamp
+                if (!line.isEmpty()) {
+                    parsedTimestamp = true;
+                }
+            }
 
             if (line.isEmpty()) {
                 // Empty line might indicate end of current thread
@@ -695,6 +711,33 @@ public final class ThreadDumpParser {
                 ));
                 break;
             }
+        }
+    }
+
+    private static @Nullable Instant tryParseTimestamp(String line) {
+        String trimmed = line == null ? "" : line.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+
+        // Common formats seen in practice:
+        // - 2024-01-15 10:30:45
+        // - 2024-01-15T10:30:45Z
+        // - 2024-01-15T10:30:45.123Z
+        try {
+            if (trimmed.contains("T") && (trimmed.endsWith("Z") || trimmed.contains("+") || trimmed.contains("-"))) {
+                return Instant.parse(trimmed);
+            }
+        } catch (DateTimeParseException ignored) {
+            // fall back to local date-time parsing
+        }
+
+        try {
+            // Treat local timestamps as system default zone for reproducibility within an environment.
+            LocalDateTime ldt = LocalDateTime.parse(trimmed, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            return ldt.atZone(ZoneId.systemDefault()).toInstant();
+        } catch (DateTimeParseException ignored) {
+            return null;
         }
     }
 }

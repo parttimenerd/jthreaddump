@@ -1,6 +1,8 @@
 package me.bechberger.jthreaddump.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.jetbrains.annotations.Nullable;
+
 import java.time.Instant;
 import java.util.List;
 
@@ -9,7 +11,7 @@ import java.util.List;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ThreadDump(
-        Instant timestamp,
+        @Nullable Instant timestamp,
         String jvmInfo,
         List<ThreadInfo> threads,
         JniInfo jniInfo,
