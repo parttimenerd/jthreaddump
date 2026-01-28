@@ -2,7 +2,6 @@ package me.bechberger.jthreaddump.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Fluent builder for {@link ThreadInfo} to simplify construction in tests and parsing code.

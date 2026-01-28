@@ -12,6 +12,9 @@ A small Java library for parsing thread dumps from `jstack` and `jcmd` output.
 - **Java 21+** - Modern Java with records and pattern matching
 - **Zero analysis** - Just parsing, you build the analysis
 
+And it includes a tiny CLI tool for pretty printing thread dumps,
+so that you can quickly check what jthreaddump can parse.
+
 ## Quick Start
 
 ### As a Library

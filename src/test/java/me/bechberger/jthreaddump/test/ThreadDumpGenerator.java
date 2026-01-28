@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -134,9 +135,7 @@ public class ThreadDumpGenerator {
                         return;
                     }
                     deadlockReached.countDown();
-                    synchronized (lock2) {
-                        // Never reached
-                    }
+                    // Never reached
                 }
             }, "DeadlockThread-A");
 
@@ -150,9 +149,7 @@ public class ThreadDumpGenerator {
                         return;
                     }
                     deadlockReached.countDown();
-                    synchronized (lock1) {
-                        // Never reached
-                    }
+                    // Never reached
                 }
             }, "DeadlockThread-B");
 
@@ -315,9 +312,7 @@ public class ThreadDumpGenerator {
                 } catch (InterruptedException e) {
                     // Continue
                 }
-                synchronized (lock2) {
-                    // Will block
-                }
+                // Will block
             }, "BlockedThread");
 
             // Platform thread holding lock
@@ -532,9 +527,7 @@ public class ThreadDumpGenerator {
                         return;
                     }
                     deadlockReached.countDown();
-                    synchronized (lockB) {
-                        // Never reached
-                    }
+                    // Never reached
                 }
             }, "DeadlockThread-A");
 
@@ -548,9 +541,7 @@ public class ThreadDumpGenerator {
                         return;
                     }
                     deadlockReached.countDown();
-                    synchronized (lockC) {
-                        // Never reached
-                    }
+                    // Never reached
                 }
             }, "DeadlockThread-B");
 
@@ -564,9 +555,7 @@ public class ThreadDumpGenerator {
                         return;
                     }
                     deadlockReached.countDown();
-                    synchronized (lockA) {
-                        // Never reached
-                    }
+                    // Never reached
                 }
             }, "DeadlockThread-C");
 
@@ -615,9 +604,7 @@ public class ThreadDumpGenerator {
                         return;
                     }
                     deadlockReached.countDown();
-                    synchronized (lock2) {
-                        // Never reached
-                    }
+                    // Never reached
                 }
             }, "DeadlockThread-A");
 
@@ -631,9 +618,7 @@ public class ThreadDumpGenerator {
                         return;
                     }
                     deadlockReached.countDown();
-                    synchronized (lock1) {
-                        // Never reached
-                    }
+                    // Never reached
                 }
             }, "DeadlockThread-B");
 
@@ -648,9 +633,7 @@ public class ThreadDumpGenerator {
                         return;
                     }
                     deadlockReached.countDown();
-                    synchronized (lock4) {
-                        // Never reached
-                    }
+                    // Never reached
                 }
             }, "DeadlockThread-C");
 
@@ -664,9 +647,7 @@ public class ThreadDumpGenerator {
                         return;
                     }
                     deadlockReached.countDown();
-                    synchronized (lock3) {
-                        // Never reached
-                    }
+                    // Never reached
                 }
             }, "DeadlockThread-D");
 
@@ -738,36 +719,14 @@ public class ThreadDumpGenerator {
 
                 // Multiple readers waiting
                 for (int i = 0; i < 3; i++) {
-                    final int readerId = i;
-                    Thread reader = new Thread(() -> {
-                        allStarted.countDown();
-                        rwLock.readLock().lock();
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            // Exit
-                        } finally {
-                            rwLock.readLock().unlock();
-                        }
-                    }, "ReadLockWaiter-" + readerId);
+                    Thread reader = getThread(i, allStarted, rwLock.readLock(), rwLock.readLock(), "ReadLockWaiter-");
                     threads.add(reader);
                     reader.start();
                 }
 
                 // Another writer waiting
                 for (int i = 0; i < 2; i++) {
-                    final int writerId = i;
-                    Thread anotherWriter = new Thread(() -> {
-                        allStarted.countDown();
-                        rwLock.writeLock().lock();
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            // Exit
-                        } finally {
-                            rwLock.writeLock().unlock();
-                        }
-                    }, "WriteLockWaiter-" + writerId);
+                    Thread anotherWriter = getThread(i, allStarted, rwLock.writeLock(), rwLock.writeLock(), "WriteLockWaiter-");
                     threads.add(anotherWriter);
                     anotherWriter.start();
                 }
@@ -783,6 +742,22 @@ public class ThreadDumpGenerator {
         };
     }
 
+    private static Thread getThread(int i, CountDownLatch allStarted, Lock rwLock, Lock rwLock1, String x) {
+        final int readerId = i;
+        Thread reader = new Thread(() -> {
+            allStarted.countDown();
+            rwLock.lock();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+// Exit
+            } finally {
+                rwLock1.unlock();
+            }
+        }, x + readerId);
+        return reader;
+    }
+
     /**
      * Generate a thread dump simulating GC activity with high memory allocation
      */
@@ -793,27 +768,7 @@ public class ThreadDumpGenerator {
 
             // Threads doing heavy allocation
             for (int i = 0; i < 8; i++) {
-                final int threadId = i;
-                Thread allocator = new Thread(() -> {
-                    allStarted.countDown();
-                    List<byte[]> garbage = new ArrayList<>();
-                    try {
-                        while (!Thread.currentThread().isInterrupted()) {
-                            // Allocate 1MB chunks
-                            garbage.add(new byte[1024 * 1024]);
-                            // Keep only last 100 chunks
-                            if (garbage.size() > 100) {
-                                garbage.remove(0);
-                            }
-                            // Small sleep to not completely thrash
-                            if (threadId % 2 == 0) {
-                                Thread.sleep(1);
-                            }
-                        }
-                    } catch (InterruptedException e) {
-                        // Exit
-                    }
-                }, "MemoryAllocator-" + threadId);
+                Thread allocator = getThread(i, allStarted);
                 threads.add(allocator);
                 allocator.start();
             }
@@ -828,6 +783,31 @@ public class ThreadDumpGenerator {
                 threads.forEach(Thread::interrupt);
             }
         };
+    }
+
+    private static Thread getThread(int i, CountDownLatch allStarted) {
+        final int threadId = i;
+        Thread allocator = new Thread(() -> {
+            allStarted.countDown();
+            List<byte[]> garbage = new ArrayList<>();
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    // Allocate 1MB chunks
+                    garbage.add(new byte[1024 * 1024]);
+                    // Keep only last 100 chunks
+                    if (garbage.size() > 100) {
+                        garbage.removeFirst();
+                    }
+                    // Small sleep to not completely thrash
+                    if (threadId % 2 == 0) {
+                        Thread.sleep(1);
+                    }
+                }
+            } catch (InterruptedException e) {
+                // Exit
+            }
+        }, "MemoryAllocator-" + threadId);
+        return allocator;
     }
 
     /**
@@ -852,9 +832,7 @@ public class ThreadDumpGenerator {
                         return;
                     }
                     deadlockReached.countDown();
-                    synchronized (lock2) {
-                        // Never reached
-                    }
+                    // Never reached
                 }
             });
 
@@ -869,9 +847,7 @@ public class ThreadDumpGenerator {
                         return;
                     }
                     deadlockReached.countDown();
-                    synchronized (lock1) {
-                        // Never reached
-                    }
+                    // Never reached
                 }
             });
 
@@ -1012,9 +988,7 @@ public class ThreadDumpGenerator {
                     try {
                         proceedToDeadlock.await();
                         Thread.sleep(50);
-                        synchronized (lock2) {
-                            // Never reached
-                        }
+                        // Never reached
                     } catch (InterruptedException e) {
                         // Exit
                     }
@@ -1027,9 +1001,7 @@ public class ThreadDumpGenerator {
                     try {
                         proceedToDeadlock.await();
                         Thread.sleep(50);
-                        synchronized (lock1) {
-                            // Never reached
-                        }
+                        // Never reached
                     } catch (InterruptedException e) {
                         // Exit
                     }
@@ -1084,7 +1056,7 @@ public class ThreadDumpGenerator {
                                 while (!Thread.currentThread().isInterrupted()) {
                                     garbage.add(new byte[512 * 1024]); // 512KB chunks
                                     if (garbage.size() > 50) {
-                                        garbage.remove(0);
+                                        garbage.removeFirst();
                                     }
                                     Thread.sleep(5);
                                 }

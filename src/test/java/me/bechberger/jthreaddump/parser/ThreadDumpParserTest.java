@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -86,7 +87,7 @@ class ThreadDumpParserTest {
             } else if (expDeadlocks != null && prsDeadlocks == null) {
                 error.append("Deadlocks: Expected=").append(expDeadlocks.size()).append(" deadlocks, Parsed=null\n");
                 hasMismatch = true;
-            } else if (expDeadlocks != null && prsDeadlocks != null) {
+            } else if (expDeadlocks != null) {
                 if (expDeadlocks.size() != prsDeadlocks.size()) {
                     error.append("Deadlock count mismatch: Expected=").append(expDeadlocks.size())
                             .append(", Parsed=").append(prsDeadlocks.size()).append("\n");
@@ -443,7 +444,7 @@ class ThreadDumpParserTest {
         List<ThreadInfo> scenarioThreads = parsed.threads().stream()
                 .filter(t -> t.name() != null &&
                              (t.name().startsWith("DeadlockThread-") || t.name().equals("WorkerThread-1")))
-                .sorted((a, b) -> a.name().compareTo(b.name()))
+                .sorted(Comparator.comparing(ThreadInfo::name))
                 .toList();
 
         // Construct expected with hardcoded values - custom equals will ignore hex values
@@ -670,7 +671,7 @@ class ThreadDumpParserTest {
 
         ThreadDump dump = ThreadDumpParser.parse(threadDump);
         assertEquals(1, dump.threads().size());
-        ThreadInfo thread = dump.threads().get(0);
+        ThreadInfo thread = dump.threads().getFirst();
 
         if (timeLine.startsWith("cpu=")) {
             assertNotNull(thread.cpuTimeSec());
@@ -705,7 +706,7 @@ class ThreadDumpParserTest {
 
         ThreadDump dump = ThreadDumpParser.parse(threadDump);
         assertEquals(1, dump.threads().size());
-        assertEquals(expectedState, dump.threads().get(0).state());
+        assertEquals(expectedState, dump.threads().getFirst().state());
     }
 
     @Test
@@ -1269,7 +1270,7 @@ class ThreadDumpParserTest {
 
         assertEquals(3, parsed.threads().size(), "Should parse the 3 threads in this resource snippet");
 
-        ThreadInfo t0 = parsed.threads().get(0);
+        ThreadInfo t0 = parsed.threads().getFirst();
         assertEquals("Attach Listener", t0.name());
         assertTrue(t0.daemon());
         assertEquals(5, t0.priority());

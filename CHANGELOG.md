@@ -8,11 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add pretty printer for thread dumps
+
 ### Changed
-### Deprecated
+- Changed CLI to pretty print the input thread dump
+
 ### Removed
-### Fixed
-### Security
+- Removed `--quiet` option from CLI
+- Removed `--verbose` option from CLI
 
 ## [0.5.6] - 2026-01-28
 

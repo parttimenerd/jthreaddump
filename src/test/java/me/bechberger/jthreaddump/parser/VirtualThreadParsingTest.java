@@ -41,7 +41,7 @@ class VirtualThreadParsingTest {
         assertNotNull(parsed);
         assertEquals(1, parsed.threads().size());
 
-        ThreadInfo thread = parsed.threads().get(0);
+        ThreadInfo thread = parsed.threads().getFirst();
 
         // Verify thread basic properties
         assertEquals("ForkJoinPool-1-worker-1", thread.name());
@@ -61,7 +61,7 @@ class VirtualThreadParsingTest {
         assertEquals(11, thread.stackTrace().size());
 
         // Check a few key stack frames
-        StackFrame firstFrame = thread.stackTrace().get(0);
+        StackFrame firstFrame = thread.stackTrace().getFirst();
         assertEquals("jdk.internal.vm.Continuation", firstFrame.className());
         assertEquals("run", firstFrame.methodName());
         assertEquals("Continuation.java", firstFrame.fileName());
@@ -100,7 +100,7 @@ class VirtualThreadParsingTest {
         ThreadDump parsed = ThreadDumpParser.parse(threadDump);
 
         assertEquals(1, parsed.threads().size());
-        ThreadInfo thread = parsed.threads().get(0);
+        ThreadInfo thread = parsed.threads().getFirst();
 
         // Thread ID from #65
         assertEquals(65L, thread.threadId());
@@ -132,7 +132,7 @@ class VirtualThreadParsingTest {
         assertEquals(3, parsed.threads().size());
 
         // First worker - carrying virtual thread
-        ThreadInfo worker1 = parsed.threads().get(0);
+        ThreadInfo worker1 = parsed.threads().getFirst();
         assertEquals("ForkJoinPool-1-worker-1", worker1.name());
         assertEquals(100L, worker1.carryingVirtualThreadId());
 
@@ -161,7 +161,7 @@ class VirtualThreadParsingTest {
 
         ThreadDump parsed = ThreadDumpParser.parse(threadDump);
 
-        ThreadInfo thread = parsed.threads().get(0);
+        ThreadInfo thread = parsed.threads().getFirst();
 
         assertEquals(250L, thread.carryingVirtualThreadId());
         assertEquals(5, thread.stackTrace().size());
@@ -191,7 +191,7 @@ class VirtualThreadParsingTest {
 
         ThreadDump parsed = ThreadDumpParser.parse(threadDump);
 
-        ThreadInfo thread = parsed.threads().get(0);
+        ThreadInfo thread = parsed.threads().getFirst();
 
         assertEquals(99L, thread.carryingVirtualThreadId());
         assertEquals(Thread.State.RUNNABLE, thread.state());
@@ -208,7 +208,7 @@ class VirtualThreadParsingTest {
 
         ThreadDump parsed = ThreadDumpParser.parse(threadDump);
 
-        ThreadInfo thread = parsed.threads().get(0);
+        ThreadInfo thread = parsed.threads().getFirst();
 
         // Should gracefully handle malformed line
         assertNull(thread.carryingVirtualThreadId());
@@ -224,7 +224,7 @@ class VirtualThreadParsingTest {
 
         ThreadDump parsed = ThreadDumpParser.parse(threadDump);
 
-        ThreadInfo thread = parsed.threads().get(0);
+        ThreadInfo thread = parsed.threads().getFirst();
 
         // Should capture from brackets
         assertEquals(12345L, thread.carryingVirtualThreadId());

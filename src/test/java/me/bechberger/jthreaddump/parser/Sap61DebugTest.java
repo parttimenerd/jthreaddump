@@ -25,8 +25,7 @@ class Sap61DebugTest {
         String content = loadResource("sapjvm/sapjvm-threaddump-61.txt");
         ThreadDump td = ThreadDumpParser.parse(content);
         assertFalse(td.threads().isEmpty());
-        var t0 = td.threads().get(0);
-        System.out.println("SAP61 t0 name=" + t0.name() + " daemon=" + t0.daemon() + " prio=" + t0.priority() + " nid=" + t0.nativeId() + " nidHex=" + (t0.nativeId() == null ? null : ("0x" + Long.toHexString(t0.nativeId()))));
+        var t0 = td.threads().getFirst();
         // Ensure we don't regress back to null
         assertNotNull(t0.daemon(), "daemon should be parsed (true/false), not null");
     }

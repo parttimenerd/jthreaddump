@@ -27,6 +27,13 @@ public record ThreadDump(
     }
 
     /**
+     * Compact, information-complete representation intended for logs/debugging.
+     */
+    public String prettyPrint() {
+        return PrettyPrinter.dump(this);
+    }
+
+    /**
      * Equals comparison that ignores hex values (memory addresses, thread IDs, etc.).
      * Useful for test comparisons where memory addresses differ between runs.
      */

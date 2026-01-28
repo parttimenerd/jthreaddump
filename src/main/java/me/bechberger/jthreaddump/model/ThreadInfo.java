@@ -97,7 +97,7 @@ public record ThreadInfo(
             return Optional.empty();
         }
         if (locksList.size() == 1) {
-            return Optional.of(locksList.get(0));
+            return Optional.of(locksList.getFirst());
         } else {
             throw new IllegalStateException("Multiple locks found with 'waiting on' status for thread: " + name);
         }

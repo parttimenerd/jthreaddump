@@ -68,7 +68,7 @@ class DeadlockParsingTest {
         assertNotNull(dump.deadlockInfos(), "Deadlock infos should be present");
         assertFalse(dump.deadlockInfos().isEmpty(), "Should have at least one deadlock");
 
-        DeadlockInfo deadlockInfo = dump.deadlockInfos().get(0);
+        DeadlockInfo deadlockInfo = dump.deadlockInfos().getFirst();
 
         // Verify deadlocked threads
         assertNotNull(deadlockInfo.threads());
@@ -152,7 +152,7 @@ class DeadlockParsingTest {
 
         assertNotNull(dump);
         assertFalse(dump.deadlockInfos().isEmpty());
-        DeadlockInfo deadlockInfo = dump.deadlockInfos().get(0);
+        DeadlockInfo deadlockInfo = dump.deadlockInfos().getFirst();
         assertEquals(3, deadlockInfo.threads().size(),
                 "Should detect all 3 threads in deadlock cycle");
 
