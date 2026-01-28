@@ -126,7 +126,7 @@ public final class PrettyPrinter {
             }
             if (t.heldBy() != null) sb.append(" heldBy=").append(t.heldBy());
         }
-        sb.append(" -> ").append(nullToEmpty(d.threads().getFirst().threadName()));
+        sb.append(" -> ").append(nullToEmpty(d.threads().get(0).threadName()));
 
         // Show per-thread details, but keep compact.
         for (DeadlockInfo.DeadlockedThread t : d.threads()) {

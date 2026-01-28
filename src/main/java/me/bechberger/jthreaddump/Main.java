@@ -71,6 +71,12 @@ public final class Main {
             System.exit(2);
             return;
         }
+        if (file == null) {
+            System.err.println("Error: No input file specified");
+            printUsage();
+            System.exit(2);
+            return;
+        }
         String content = readInput(file);
         ThreadDump dump = ThreadDumpParser.parse(content);
         System.out.println(PrettyPrinter.dump(dump));

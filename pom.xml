@@ -47,6 +47,10 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jdk.version>17</jdk.version>
+        <jdk-test.version>21</jdk-test.version>
+        <maven.compiler.release>${jdk.version}</maven.compiler.release>
+        <maven.compiler.testRelease>${jdk-test.version}</maven.compiler.testRelease>
     </properties>
 
     <dependencyManagement>
@@ -69,7 +73,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <release>21</release>
                     <compilerArgs>
                         <arg>--add-modules</arg>
                         <arg>jdk.jfr</arg>

@@ -6,11 +6,11 @@ A small Java library for parsing thread dumps from `jstack` and `jcmd` output.
 
 ## Features
 
-- **Parse jstack and jcmd output** - Automatic format detection
-- **Rich data model** - Thread states, stack traces, locks, JNI refs, deadlocks
-- **Annotations for Jackson** - All model classes are annotated for JSON/YAML serialization
-- **Java 21+** - Modern Java with records and pattern matching
-- **Zero analysis** - Just parsing, you build the analysis
+- **Parse jstack and jcmd output**: Automatic format detection
+- **Rich data model**: Thread states, stack traces, locks, JNI refs, deadlocks
+- **Annotations for Jackson**: All model classes are annotated for JSON/YAML serialization
+- **Java 17+**: Modern Java with records
+- **Zero analysis**: Just parsing, you build the analysis
 
 And it includes a tiny CLI tool for pretty printing thread dumps,
 so that you can quickly check what jthreaddump can parse.
@@ -193,6 +193,8 @@ Options:
 ```
 
 ## Testing
+
+It requires Java 21 for running the tests.
 
 ```bash
 # Run all tests
