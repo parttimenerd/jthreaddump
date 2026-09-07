@@ -44,6 +44,28 @@ usage:
         System.out.println("Deadlocks detected!");
     }
 how_to:
+- title: Parse a thread dump file and inspect threads
+  body: |
+    Feed any `jstack` or `jcmd Thread.print` output to `ThreadDumpParser.parse()` —
+    you get a typed model with states, stack frames, and deadlock detection:
+    ```java
+    import me.bechberger.jthreaddump.ThreadDumpParser;
+    import me.bechberger.jthreaddump.model.ThreadDump;
+
+    String raw = Files.readString(Path.of("dump.txt"));
+    ThreadDump dump = ThreadDumpParser.parse(raw);
+
+    System.out.println("Threads: " + dump.threads().size());
+    dump.threads().forEach(t ->
+        System.out.println(t.name() + " — " + t.state()));
+
+    if (!dump.deadlockInfos().isEmpty()) {
+        System.out.println("Deadlock detected!");
+    }
+    ```
+    Works with output from `jstack <pid>`, `jcmd <pid> Thread.print`, and thread dumps
+    in `.txt` files captured by any means.
+
 - title: Capture a live thread dump and parse it
   body: |
     ```java
