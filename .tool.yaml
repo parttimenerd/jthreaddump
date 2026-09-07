@@ -1,0 +1,94 @@
+tag: ready
+maven_coordinates: me.bechberger:jthreaddump
+tagline: Java library for parsing thread dump output from jstack and jcmd into a typed model. Handles
+  all major thread dump formats across JDK versions, including virtual threads, giving you structured
+  access to thread states, stack frames, lock information, CPU times, and deadlock cycles.
+tagline_short: Parse jstack/jcmd thread dumps into a structured Java model — all JDK formats supported.
+when_to_use:
+- You need to programmatically parse and analyse Java thread dumps
+- You are building tooling that processes jstack or jcmd output
+- You want to diff thread dumps or detect recurring blocking patterns
+- You need virtual thread support in thread dump parsing
+when_not_to_use:
+- You need live thread inspection (use jstall instead)
+- You need profiling data (use the JFR profiling tools instead)
+install:
+- label: Maven
+  lang: xml
+  code: |
+    <dependency>
+      <groupId>me.bechberger</groupId>
+      <artifactId>jthreaddump</artifactId>
+      <version>VERSION</version>
+    </dependency>
+- label: Maven (minimal, no Jackson)
+  lang: xml
+  code: |
+    <dependency>
+      <groupId>me.bechberger</groupId>
+      <artifactId>jthreaddump-minimal</artifactId>
+      <version>VERSION</version>
+    </dependency>
+- label: Gradle
+  lang: groovy
+  code: implementation 'me.bechberger:jthreaddump:VERSION'
+usage:
+- label: Parse and inspect
+  lang: java
+  code: |
+    ThreadDump dump = ThreadDumpParser.parse(dumpText);
+    for (var thread : dump.threads()) {
+        System.out.println(thread.name() + " - " + thread.state());
+    }
+    if (dump.deadlockInfos() != null && !dump.deadlockInfos().isEmpty()) {
+        System.out.println("Deadlocks detected!");
+    }
+how_to:
+- title: Capture a live thread dump and parse it
+  body: |
+    ```java
+    String raw = JStackUtil.captureThreadDump(pid);        // uses jstack
+    String raw = JStackUtil.captureThreadDump(pid, true);  // uses jcmd (Thread.print -l)
+    ThreadDump dump = ThreadDumpParser.parse(raw);
+    ```
+    jcmd output includes more detail: CPU time, elapsed time, and JNI reference counts.
+
+- title: Find BLOCKED threads and the locks they are waiting for
+  body: |
+    ```java
+    ThreadDump dump = ThreadDumpParser.parse(dumpText);
+    dump.threads().stream()
+        .filter(t -> t.state() == Thread.State.BLOCKED)
+        .forEach(t -> System.out.println(t.name() + " is blocked"));
+    ```
+    Lock information (monitors held/waiting, object addresses) is available on each thread object.
+
+- title: Find threads consuming the most CPU time
+  body: |
+    CPU time is populated when using jcmd output (`JStackUtil.captureThreadDump(pid, true)`).
+    ```java
+    dump.threads().stream()
+        .filter(t -> t.cpuTimeSec() != null)
+        .sorted((a, b) -> Double.compare(b.cpuTimeSec(), a.cpuTimeSec()))
+        .limit(10)
+        .forEach(t -> System.out.printf("%s: %.2f sec CPU%n", t.name(), t.cpuTimeSec()));
+    ```
+
+- title: Diff two thread dumps
+  body: |
+    ```java
+    ThreadDump before = ThreadDumpParser.parse(Files.readString(Path.of("before.txt")));
+    ThreadDump after  = ThreadDumpParser.parse(Files.readString(Path.of("after.txt")));
+    System.out.println("Thread delta: " + (after.threads().size() - before.threads().size()));
+    ```
+    Use this pattern to compare dumps taken during a suspected leak or thread explosion.
+
+- title: Use the CLI to pretty-print a dump
+  body: |
+    The library ships a minimal CLI for quick inspection:
+    ```bash
+    jthreaddump dump.txt           # parse and display summary
+    jstack <pid> | jthreaddump -   # pipe from jstack
+    jthreaddump dump.txt -v        # verbose output
+    ```
+    Build it with `mvn clean package`, then run `java -jar target/jthreaddump.jar`.
